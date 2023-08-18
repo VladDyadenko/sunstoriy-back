@@ -4,7 +4,7 @@ import { Document } from 'mongoose';
 
 export type UserDocument = User & Document;
 
-@Schema()
+@Schema({ versionKey: false, timestamps: true })
 export class User {
   @Prop({ required: [true, 'Set name for user'] })
   name: string;
@@ -25,7 +25,7 @@ export class User {
   verificationToken: string;
 
   @Prop({ default: 'user' })
-  rule: string;
+  role: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Lessons' })
   lessons: string[];

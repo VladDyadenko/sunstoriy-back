@@ -7,7 +7,8 @@ export interface IUser extends Document {
   readonly avatarUrl: string;
   readonly verify: boolean;
   readonly verificationToken: string;
-  readonly rule: string;
+  readonly role: string;
   readonly lessons: string[];
   readonly token: string;
+  readonly createdAt: string;
 }

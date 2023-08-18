@@ -2,6 +2,8 @@ import { Module, forwardRef } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from 'src/users/user.models';
 
 @Module({
   providers: [AuthService],
@@ -13,6 +15,7 @@ import { JwtModule } from '@nestjs/jwt';
         expiresIn: '24h',
       },
     }),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   exports: [AuthService, JwtModule],
 })

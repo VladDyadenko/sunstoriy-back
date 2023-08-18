@@ -57,21 +57,4 @@ export class UsersController {
   async deleteUser(@Param('id') id: string) {
     return await this.usersService.deleteUserById(id);
   }
-
-  // @Post('login')
-  // async login(@Res() res, @Body() loginUserDto: LoginUserDto) {
-  //   try {
-  //     const user = await this.usersService.login(loginUserDto);
-  //     return res.status(HttpStatus.ACCEPTED).json({
-  //       message: 'Login success',
-  //       user,
-  //     });
-  //   } catch (err) {
-  //     return res.status(HttpStatus.BAD_REQUEST).json({
-  //       statusCode: 400,
-  //       message: err.message,
-  //       error: 'Bad Request',
-  //     });
-  //   }
-  // }
 }
