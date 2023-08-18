@@ -1,16 +1,18 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { config } from 'dotenv';
 import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/users/user.models';
+config();
 
 @Module({
   providers: [AuthService],
   imports: [
     forwardRef(() => UsersModule),
     JwtModule.register({
-      secret: process.env.PRIVATE_KEY || 'SECRET',
+      secret: `${process.env.PRIVATE_KEY}`,
       signOptions: {
         expiresIn: '24h',
       },
