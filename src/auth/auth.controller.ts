@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Res,
+  Request,
   UnauthorizedException,
   HttpStatus,
 } from '@nestjs/common';
@@ -13,12 +14,13 @@ import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/users/dto/create-users.dto';
 import { LoginUserDto } from 'src/users/dto/login-users.dto';
-import { IUser } from 'src/users/interface/users.interface';
+import { Public } from './public.decorator';
 
 @Controller('/')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Public()
   @Post('/register')
   async registration(@Body() userDto: CreateUserDto, @Res() res: Response) {
     try {
@@ -46,6 +48,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Post('/login')
   async login(@Body() userDto: LoginUserDto, @Res() res: Response) {
     try {
@@ -96,9 +99,9 @@ export class AuthController {
   }
 
   @Get('/current')
-  async getCurrent(@Body() userDto: IUser, @Res() res: Response) {
+  async getCurrent(@Request() req, @Res() res: Response) {
     try {
-      const user = await this.authService.getCurrent(userDto);
+      const user = req.user;
 
       if (!user) {
         throw new UnauthorizedException({

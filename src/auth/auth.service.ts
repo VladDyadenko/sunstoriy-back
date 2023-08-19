@@ -73,21 +73,12 @@ export class AuthService {
     return updateUser;
   }
 
-  async getCurrent(user: IUser) {
-    if (!user) {
-      return null;
-    }
-    const currentUser = {
-      name: user.name,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
-    };
-    return currentUser;
-  }
-
   private async generateToken(user: User) {
     const payload = {
       email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
     };
 
     return { token: this.jwtService.sign(payload) };
