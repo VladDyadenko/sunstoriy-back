@@ -53,7 +53,7 @@ export class UsersController {
     return await this.usersService.getUserById(id);
   }
 
-  @Patch(':id')
+  @Patch('update/:id')
   async deleteUser(@Param('id') id: string) {
     return await this.usersService.deleteUserById(id);
   }
