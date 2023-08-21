@@ -25,11 +25,11 @@ export class UsersService {
     }));
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const { avatarUrl, name, token } = updateUserDto;
+  async update(updateUserDto: UpdateUserDto) {
+    const { avatarUrl, name, token, _id } = updateUserDto;
 
     const user = await this.userModule.findByIdAndUpdate(
-      id,
+      _id,
       { name: name, avatarUrl: avatarUrl, token: token },
       { new: true },
     );

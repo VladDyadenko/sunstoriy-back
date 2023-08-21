@@ -5,12 +5,14 @@ import {
   Controller,
   Post,
   Res,
+  Put,
   HttpStatus,
+  Request,
   Get,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-users.dto';
 import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-users.dto';
+import { Public } from 'src/auth/public.decorator';
 
 @Controller('/users')
 export class UsersController {
@@ -32,9 +34,10 @@ export class UsersController {
     }
   }
 
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const updatedUser = await this.usersService.update(id, updateUserDto);
+  @Public()
+  @Put('update')
+  async update(@Request() req) {
+    const updatedUser = await this.usersService.update(req);
 
     if (updatedUser === null) {
       return { message: 'Nothing changed' };

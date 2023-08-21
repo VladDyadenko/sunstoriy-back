@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/users/user.models';
 import { AuthGuard } from './auth.guard';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 config();
 
 @Module({
@@ -16,6 +17,7 @@ config();
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
+    CloudinaryService,
   ],
   imports: [
     forwardRef(() => UsersModule),

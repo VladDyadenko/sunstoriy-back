@@ -9,35 +9,48 @@ import {
   Request,
   UnauthorizedException,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/users/dto/create-users.dto';
 import { LoginUserDto } from 'src/users/dto/login-users.dto';
 import { Public } from './public.decorator';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { UpdateUserDto } from 'src/users/dto/update-users.dto';
 
 @Controller('/')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
   @Public()
   @Post('/register')
   async registration(@Body() userDto: CreateUserDto, @Res() res: Response) {
     try {
-      const newUser = await this.authService.register(userDto);
-      if (!newUser) {
+      const user = await this.authService.register(userDto);
+      if (!user) {
         throw new UnauthorizedException({
           message: 'Неавторизований користувач',
         });
       }
       return res.status(200).json({
         message: 'Success login',
-        token: newUser.token,
         user: {
-          name: newUser.name,
-          email: newUser.email,
-          avatarUrl: newUser.avatarUrl,
-          registeredAt: newUser.createdAt,
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          token: user.token,
+          avatarUrl: user.avatarUrl,
+          createdAt: user.createdAt,
         },
       });
     } catch (error) {
@@ -61,13 +74,15 @@ export class AuthController {
 
       return res.status(200).json({
         message: 'Success login',
-        token: user.token,
         user: {
+          _id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role,
+          token: user.token,
           avatarUrl: user.avatarUrl,
+          createdAt: user.createdAt,
           lessons: user.lessons,
-          registeredAt: user.createdAt,
         },
       });
     } catch (error) {
@@ -120,5 +135,27 @@ export class AuthController {
         message: 'Internal server error',
       });
     }
+  }
+
+  @Post('/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 4 }),
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg)' }),
+        ],
+      }),
+    )
+    avatar: Express.Multer.File,
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return await this.authService.updateProfile(
+      req.user._id,
+      updateUserDto,
+      avatar,
+    );
   }
 }
