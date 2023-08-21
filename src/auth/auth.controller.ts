@@ -151,11 +151,31 @@ export class AuthController {
     avatar: Express.Multer.File,
     @Request() req,
     @Body() updateUserDto: UpdateUserDto,
+    @Res() res: Response,
   ) {
-    return await this.authService.updateProfile(
-      req.user._id,
-      updateUserDto,
-      avatar,
-    );
+    try {
+      const user = req.user;
+
+      if (!user) {
+        throw new UnauthorizedException({
+          message: 'Неавторизований користувач',
+        });
+      }
+      const updateUser = await this.authService.updateProfile(
+        req.user._id,
+        updateUserDto,
+        avatar,
+      );
+      return res.json({
+        code: HttpStatus.OK,
+        message: 'User update successful',
+        updateUser,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Internal server error',
+      });
+    }
   }
 }
