@@ -71,6 +71,7 @@ export class AuthService {
     userId: string,
     updateUserDto: UpdateUserDto,
     file: Express.Multer.File,
+    folder: string,
   ) {
     const user = await this.userModule.findById(userId);
 
@@ -78,15 +79,15 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
     const avatarUrl = file
-      ? (await this.cloudinaryService.uploadFile(file)).secure_url
+      ? (await this.cloudinaryService.uploadFile(file, folder)).secure_url
       : user.avatarUrl;
 
     const newName = updateUserDto ? updateUserDto.name : user.name;
-    const avatar = file ? avatarUrl : user.avatarUrl;
+    const avatarNew = file ? avatarUrl : user.avatarUrl;
 
     const updatedUser = await this.userModule.findByIdAndUpdate(
       userId,
-      { name: newName, avatarUrl: avatar },
+      { name: newName, avatarUrl: avatarNew },
       { new: true },
     );
 

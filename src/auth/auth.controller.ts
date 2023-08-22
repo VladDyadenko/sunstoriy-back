@@ -148,7 +148,7 @@ export class AuthController {
         ],
       }),
     )
-    avatar: Express.Multer.File,
+    file: Express.Multer.File,
     @Request() req,
     @Body() updateUserDto: UpdateUserDto,
     @Res() res: Response,
@@ -161,10 +161,19 @@ export class AuthController {
           message: 'Неавторизований користувач',
         });
       }
+      let folder: string;
+      if (file.fieldname === 'avatar') {
+        folder = 'avatars';
+      } else if (file.fieldname === 'thumb') {
+        folder = 'thumbs';
+      } else {
+        folder = 'misc';
+      }
       const updateUser = await this.authService.updateProfile(
         req.user._id,
         updateUserDto,
-        avatar,
+        file,
+        folder,
       );
       return res.json({
         code: HttpStatus.OK,
