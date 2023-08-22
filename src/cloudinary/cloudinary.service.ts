@@ -8,10 +8,11 @@ export class CloudinaryService {
   uploadFile(
     file: Express.Multer.File,
     folderName: string,
+    publicId: string,
   ): Promise<CloudinaryResponse> {
     return new Promise<CloudinaryResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: folderName },
+        { folder: folderName, public_id: publicId },
         (error, result) => {
           if (error) return reject(error);
           resolve(result);

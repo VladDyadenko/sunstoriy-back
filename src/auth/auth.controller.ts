@@ -43,12 +43,12 @@ export class AuthController {
       }
       return res.status(200).json({
         message: 'Success login',
+        token: user.token,
         user: {
           _id: user._id,
           name: user.name,
           email: user.email,
           role: user.role,
-          token: user.token,
           avatarUrl: user.avatarUrl,
           createdAt: user.createdAt,
         },
@@ -74,12 +74,12 @@ export class AuthController {
 
       return res.status(200).json({
         message: 'Success login',
+        token: user.token,
         user: {
           _id: user._id,
           name: user.name,
           email: user.email,
           role: user.role,
-          token: user.token,
           avatarUrl: user.avatarUrl,
           createdAt: user.createdAt,
           lessons: user.lessons,
@@ -164,10 +164,14 @@ export class AuthController {
       let folder: string;
       if (file.fieldname === 'avatar') {
         folder = 'avatars';
-      } else if (file.fieldname === 'thumb') {
-        folder = 'thumbs';
+      } else if (file.fieldname === 'child') {
+        folder = 'children';
+      } else if (file.fieldname === 'teacher') {
+        folder = 'teachers';
+      } else if (file.fieldname === 'lesson') {
+        folder = 'lessons';
       } else {
-        folder = 'misc';
+        folder = 'life';
       }
       const updateUser = await this.authService.updateProfile(
         req.user._id,

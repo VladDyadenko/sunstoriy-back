@@ -78,8 +78,10 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    const publicId = `${folder}/${file.originalname}`;
     const avatarUrl = file
-      ? (await this.cloudinaryService.uploadFile(file, folder)).secure_url
+      ? (await this.cloudinaryService.uploadFile(file, folder, publicId))
+          .secure_url
       : user.avatarUrl;
 
     const newName = updateUserDto ? updateUserDto.name : user.name;
@@ -97,6 +99,7 @@ export class AuthService {
       email: updatedUser.email,
       avatarUrl: updatedUser.avatarUrl,
       role: updatedUser.role,
+      publicId,
     };
   }
 
