@@ -3,8 +3,6 @@ import {
   Post,
   Get,
   Body,
-  Patch,
-  Param,
   Res,
   Request,
   UnauthorizedException,
@@ -24,7 +22,7 @@ import { Public } from './public.decorator';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { UpdateUserDto } from 'src/users/dto/update-users.dto';
 
-@Controller('/')
+@Controller('/auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
@@ -51,6 +49,8 @@ export class AuthController {
           role: user.role,
           avatarUrl: user.avatarUrl,
           createdAt: user.createdAt,
+          lessons: user.lessons,
+          children: user.children,
         },
       });
     } catch (error) {
@@ -83,6 +83,7 @@ export class AuthController {
           avatarUrl: user.avatarUrl,
           createdAt: user.createdAt,
           lessons: user.lessons,
+          children: user.children,
         },
       });
     } catch (error) {
@@ -93,10 +94,10 @@ export class AuthController {
     }
   }
 
-  @Patch('/logout/:id')
-  async logout(@Param('id') id: string, @Res() res: Response) {
+  @Post('/logout')
+  async logout(@Request() req, @Res() res: Response) {
     try {
-      const user = await this.authService.logout(id);
+      const user = await this.authService.logout(req.user);
       if (!user) {
         throw new UnauthorizedException({
           message: 'Неавторизований користувач',
@@ -116,18 +117,27 @@ export class AuthController {
   @Get('/current')
   async getCurrent(@Request() req, @Res() res: Response) {
     try {
-      const user = req.user;
+      const user = await this.authService.getCurrent(req.user);
 
       if (!user) {
         throw new UnauthorizedException({
           message: 'Неавторизований користувач',
         });
       }
-
       return res.json({
         code: HttpStatus.OK,
         message: 'Success',
-        user,
+        token: user.token,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatarUrl: user.avatarUrl,
+          createdAt: user.createdAt,
+          lessons: user.lessons,
+          children: user.children,
+        },
       });
     } catch (error) {
       console.error(error);
@@ -138,7 +148,7 @@ export class AuthController {
   }
 
   @Post('/upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('avatar'))
   async uploadImage(
     @UploadedFile(
       new ParseFilePipe({
@@ -161,18 +171,7 @@ export class AuthController {
           message: 'Неавторизований користувач',
         });
       }
-      let folder: string;
-      if (file.fieldname === 'avatar') {
-        folder = 'avatars';
-      } else if (file.fieldname === 'child') {
-        folder = 'children';
-      } else if (file.fieldname === 'teacher') {
-        folder = 'teachers';
-      } else if (file.fieldname === 'lesson') {
-        folder = 'lessons';
-      } else {
-        folder = 'life';
-      }
+      const folder: string = file.fieldname;
       const updateUser = await this.authService.updateProfile(
         req.user._id,
         updateUserDto,

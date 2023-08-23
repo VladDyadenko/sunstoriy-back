@@ -9,6 +9,7 @@ export interface IUser extends Document {
   readonly verificationToken: string;
   readonly role: string;
   readonly lessons: string[];
+  readonly children: string[];
   readonly token: string;
   readonly createdAt: string;
 }

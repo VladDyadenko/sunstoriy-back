@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as gravatar from 'gravatar';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as path from 'path';
 import { CreateUserDto } from 'src/users/dto/create-users.dto';
 import { UsersService } from 'src/users/users.service';
 import { User } from '../users/user.models';
@@ -67,10 +68,17 @@ export class AuthService {
     return updatedUser;
   }
 
+  async getCurrent(updateUserDto: UpdateUserDto) {
+    const { _id } = updateUserDto;
+    const user = await this.userModule.findById(_id);
+
+    return user;
+  }
+
   async updateProfile(
     userId: string,
     updateUserDto: UpdateUserDto,
-    file: Express.Multer.File,
+    avatar: Express.Multer.File,
     folder: string,
   ) {
     const user = await this.userModule.findById(userId);
@@ -78,14 +86,15 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const publicId = `${folder}/${file.originalname}`;
-    const avatarUrl = file
-      ? (await this.cloudinaryService.uploadFile(file, folder, publicId))
+    const publicId = path.parse(avatar.originalname).name;
+
+    const avatarUrl = avatar
+      ? (await this.cloudinaryService.uploadFile(avatar, folder, publicId))
           .secure_url
       : user.avatarUrl;
 
     const newName = updateUserDto ? updateUserDto.name : user.name;
-    const avatarNew = file ? avatarUrl : user.avatarUrl;
+    const avatarNew = avatar ? avatarUrl : user.avatarUrl;
 
     const updatedUser = await this.userModule.findByIdAndUpdate(
       userId,
@@ -103,18 +112,12 @@ export class AuthService {
     };
   }
 
-  async logout(_id: string) {
-    const user = await this.userModule.findById(_id);
-
-    if (!user) {
-      throw new UnauthorizedException({
-        message: 'Неавторизований користувач',
-      });
-    }
-    const updateUser = await this.userModule.findByIdAndUpdate(_id, {
+  async logout(updateUserDto: UpdateUserDto) {
+    const { _id } = updateUserDto;
+    const UpdateUser = await this.userModule.findByIdAndUpdate(_id, {
       $set: { token: null },
     });
-    return updateUser;
+    return UpdateUser;
   }
 
   private async generateToken(user: User, id: string) {

@@ -27,8 +27,11 @@ export class User {
   @Prop({ default: 'user' })
   role: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Lessons' })
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Lessons' }])
   lessons: string[];
+
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'children' }])
+  children: string[];
 
   @Prop({ default: null })
   token: string;
