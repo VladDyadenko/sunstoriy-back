@@ -7,6 +7,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/users/user.models';
 import { AuthGuard } from './auth.guard';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { config } from 'dotenv';
+config();
 
 @Module({
   providers: [
@@ -20,7 +22,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
   imports: [
     forwardRef(() => UsersModule),
     JwtModule.register({
-      secret: process.env.PRIVATE_KEY,
+      secret: `${process.env.PRIVATE_KEY}`,
       signOptions: {
         expiresIn: '24h',
       },
