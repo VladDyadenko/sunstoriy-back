@@ -13,11 +13,11 @@ import * as bcrypt from 'bcrypt';
 import * as path from 'path';
 import { CreateUserDto } from 'src/users/dto/create-users.dto';
 import { UsersService } from 'src/users/users.service';
-import { User } from '../users/user.models';
 import { LoginUserDto } from 'src/users/dto/login-users.dto';
 import { IUser } from 'src/users/interface/users.interface';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { UpdateUserDto } from 'src/users/dto/update-users.dto';
+import { User } from 'src/users/user.models';
 
 @Injectable()
 export class AuthService {

@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { RolesModule } from './roles/roles.module';
 import { config } from 'dotenv';
+import { ChildModule } from './child/child.module';
 config();
 
 @Module({
@@ -15,6 +16,7 @@ config();
     AuthModule,
     CloudinaryModule,
     RolesModule,
+    ChildModule,
   ],
   controllers: [AuthController],
   providers: [],

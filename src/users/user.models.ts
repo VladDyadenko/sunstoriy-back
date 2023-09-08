@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Document } from 'mongoose';
+import { Child } from 'src/child/child.models';
+import { Type } from 'class-transformer';
 
 export type UserDocument = User & Document;
 
@@ -27,11 +29,12 @@ export class User {
   @Prop({ default: 'user' })
   role: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Lessons' }])
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }])
   lessons: string[];
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'children' }])
-  children: string[];
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: Child.name }])
+  @Type(() => Child)
+  children: Child[];
 
   @Prop({ default: null })
   token: string;
