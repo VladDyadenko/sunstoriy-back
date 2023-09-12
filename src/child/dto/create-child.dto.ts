@@ -25,9 +25,9 @@ export class CreateChildDto {
   age?: string;
 
   @IsString()
-  mather: string;
+  mather?: string;
 
-  matherPhone: string;
+  matherPhone?: string;
 
   childImage?: string;
 

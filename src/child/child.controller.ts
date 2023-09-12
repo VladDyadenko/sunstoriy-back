@@ -5,40 +5,43 @@ import {
   Post,
   Res,
   UseInterceptors,
-  UploadedFile,
-  ParseFilePipe,
-  FileTypeValidator,
+  UploadedFiles,
   Request,
 } from '@nestjs/common';
-
 import { ChildService } from './child.service';
 import { CreateChildDto } from './dto/create-child.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('/child')
 export class ChildController {
   constructor(private childService: ChildService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('childImage'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'childImage', maxCount: 1 },
+      {
+        name: 'childFiles',
+        maxCount: 20,
+      },
+    ]),
+  )
   async create(
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [new FileTypeValidator({ fileType: '.(png|jpeg|jpg)' })],
-      }),
-    )
-    file: Express.Multer.File,
     @Request() req,
     @Res() res,
     @Body() createChildDto: CreateChildDto,
+    @UploadedFiles()
+    files?: {
+      childImage?: Express.Multer.File;
+      childFiles?: Express.Multer.File[];
+    },
   ) {
     try {
       const user = req.user;
-      const folder: string = file.fieldname;
       const child = await this.childService.createChild(
         createChildDto,
-        file,
-        folder,
+        files.childImage,
+        files.childFiles,
         user,
       );
       return res.status(HttpStatus.CREATED).json({

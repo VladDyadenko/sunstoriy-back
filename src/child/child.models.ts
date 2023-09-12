@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
 import * as mongoose from 'mongoose';
+
+import { Document } from 'mongoose';
 import { User } from 'src/users/user.models';
 
 export type ChildDocument = Child & Document;
@@ -22,11 +23,11 @@ export class Child {
   @Prop()
   childImage?: string;
 
-  @Prop({ required: [true, 'Set name for mather'] })
-  mather: string;
+  @Prop()
+  mather?: string;
 
-  @Prop({ required: [true, 'phone is required'], unique: true })
-  matherPhone: string;
+  @Prop()
+  matherPhone?: string;
 
   @Prop()
   father?: string;

@@ -37,6 +37,18 @@ export class UsersService {
     return user;
   }
 
+  async updateChild(_id: string, id: string) {
+    const user = await this.userModule.findByIdAndUpdate(
+      _id,
+      {
+        children: id,
+      },
+      { new: true },
+    );
+
+    return user;
+  }
+
   async getUserById(id: string) {
     const user = await this.userModule.findById({ _id: id });
     return user;

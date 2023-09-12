@@ -1,8 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Document } from 'mongoose';
-import { Child } from 'src/child/child.models';
-import { Type } from 'class-transformer';
 
 export type UserDocument = User & Document;
 
@@ -32,9 +30,8 @@ export class User {
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }])
   lessons: string[];
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: Child.name }])
-  @Type(() => Child)
-  children: Child[];
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'child' }])
+  children: string[];
 
   @Prop({ default: null })
   token: string;
