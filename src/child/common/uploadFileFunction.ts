@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises';
 
-const uploadChildFiles = async (files) => {
-  const uploadPromises = files.map(async (file) => {
+const uploadChildFiles = async (files: Express.Multer.File[]) => {
+  const uploadPromises = files?.map(async (file) => {
     const uniqueSuffix = Date.now();
     const fileName = `${file.fieldname}-${file.originalname}-${uniqueSuffix}`;
     const folderPath = `./uploads/child`;

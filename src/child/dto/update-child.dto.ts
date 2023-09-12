@@ -1,32 +1,12 @@
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateChildDto } from './create-child.dto';
 
-export class CreateChildDto {
-  @IsString()
-  @MinLength(2)
-  @MaxLength(40)
-  @IsNotEmpty()
-  readonly name: string;
-
-  @IsString()
-  @MinLength(2)
-  @MaxLength(40)
+export class UpdateChildDto extends PartialType(CreateChildDto) {
+  name?: string;
   surname?: string;
-
-  @IsDateString()
   birthDate?: Date;
-
-  @IsString()
   age?: string;
-
-  @IsString()
   mather?: string;
-
   matherPhone?: string;
   childImage?: string;
   father?: string;
