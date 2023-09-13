@@ -38,4 +38,5 @@ export class CreateChildDto {
   tutor?: string;
   rehabilitation?: string;
   childFiles?: string[];
+  owner: string;
 }

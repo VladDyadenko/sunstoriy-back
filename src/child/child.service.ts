@@ -25,25 +25,26 @@ export class ChildService {
     childFiles: Express.Multer.File[],
     user: IUser,
   ) {
-    const folder = childImagePreview[0].fieldname;
-    const publicId = path.parse(childImagePreview[0].originalname).name;
+    const childUpload: Partial<CreateChildDto> = { ...dto, owner: user._id };
 
-    const childImage = (
-      await this.cloudinaryService.uploadFile(
-        childImagePreview[0],
-        folder,
-        publicId,
-      )
-    ).secure_url;
+    if (childImagePreview) {
+      const folder = childImagePreview[0].fieldname;
+      const publicId = path.parse(childImagePreview[0].originalname).name;
 
-    const childFileUrls = await uploadChildFiles(childFiles);
+      const childImage = (
+        await this.cloudinaryService.uploadFile(
+          childImagePreview[0],
+          folder,
+          publicId,
+        )
+      ).secure_url;
+      childUpload.childImage = childImage;
+    }
 
-    const childUpload = {
-      ...dto,
-      childImage,
-      childFiles: childFileUrls,
-      owner: user._id,
-    };
+    if (childFiles && childFiles.length > 0) {
+      const childFileUrls = await uploadChildFiles(childFiles);
+      childUpload.childFiles = childFileUrls;
+    }
 
     const child = await this.childModule.create(childUpload);
 
