@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Child } from './child.models';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { Express } from 'express';
 import { IChild } from './interface/child.intarface';
 import { CreateChildDto } from './dto/create-child.dto';
 import * as path from 'path';
@@ -25,6 +26,18 @@ export class ChildService {
     childFiles: Express.Multer.File[],
     user: IUser,
   ) {
+    const query = {
+      surname: dto.surname,
+      name: dto.name,
+    };
+
+    const candidate = await this.childModule.find(query);
+    if (candidate.length > 0) {
+      throw new HttpException(
+        'Дитина з такою фамілією вже існує',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const childUpload: Partial<CreateChildDto> = { ...dto, owner: user._id };
 
     if (childImagePreview) {
@@ -118,4 +131,26 @@ export class ChildService {
     });
     return child;
   }
+  async deleteChildById(id: string, user: IUser) {
+    await this.childModule.deleteOne({ _id: id });
+    await this.userModule.findByIdAndUpdate(
+      user._id,
+      {
+        $pull: {
+          children: id,
+        },
+      },
+      { new: true },
+    );
+
+    return `Successful delete`;
+  }
+  // async getUploadFile(filePath: string) {
+  //   const fileData = await readUploadedFile(filePath);
+  //   if (!fileData) {
+  //     throw new Error('File not found!');
+  //   }
+
+  //   return fileData;
+  // }
 }

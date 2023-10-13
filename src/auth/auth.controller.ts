@@ -118,7 +118,6 @@ export class AuthController {
   async getCurrent(@Request() req, @Res() res: Response) {
     try {
       const user = await this.authService.getCurrent(req.user);
-
       if (!user) {
         throw new UnauthorizedException({
           message: 'Неавторизований користувач',

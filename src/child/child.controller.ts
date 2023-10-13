@@ -12,8 +12,10 @@ import {
   Request,
   Param,
   NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import { ChildService } from './child.service';
+import { Express } from 'express';
 import { CreateChildDto } from './dto/create-child.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateChildDto } from './dto/update-child.dto';
@@ -50,10 +52,7 @@ export class ChildController {
         files.childFiles,
         user,
       );
-      return res.status(HttpStatus.CREATED).json({
-        message: 'Child has been created successfully',
-        child: child,
-      });
+      return res.status(HttpStatus.CREATED).json(child);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
@@ -74,7 +73,7 @@ export class ChildController {
     ]),
   )
   async updateChild(
-    @Param('id') _id: string,
+    @Param('id') id: string,
     @Request() req,
     @Res() res,
     @Body() updateChildDto: UpdateChildDto,
@@ -92,15 +91,12 @@ export class ChildController {
       }
 
       const updatedChild = await this.childService.updateChild(
-        _id,
+        id,
         updateChildDto,
         files.childImage,
         files.childFiles,
       );
-      return res.status(HttpStatus.OK).json({
-        message: 'Child has been update successfully',
-        child: updatedChild,
-      });
+      return res.status(HttpStatus.OK).json(updatedChild);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
@@ -138,4 +134,29 @@ export class ChildController {
     }
     return child;
   }
+
+  @Patch('delete/:id')
+  async deleteChild(@Param('id') id: string, @Request() req) {
+    const user = req.user;
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return await this.childService.deleteChildById(id, user);
+  }
+
+  // @Get('file')
+  // async getUploadFile(@Request() req, @Body() filePath: string) {
+  //   const user = req.user;
+
+  //   if (!user) {
+  //     throw new UnauthorizedException({
+  //       message: 'Неавторизований користувач',
+  //     });
+  //   }
+
+  //   const fileData = await this.childService.getUploadFile(filePath);
+  //   return fileData;
+  // }
 }
