@@ -8,6 +8,7 @@ import { RolesModule } from './roles/roles.module';
 import { config } from 'dotenv';
 import { ChildModule } from './child/child.module';
 import { FileModule } from './file/file.module';
+import { TeacherModule } from './teacher/teacher.module';
 config();
 
 @Module({
@@ -19,6 +20,7 @@ config();
     RolesModule,
     ChildModule,
     FileModule,
+    TeacherModule,
   ],
   controllers: [AuthController],
   providers: [],

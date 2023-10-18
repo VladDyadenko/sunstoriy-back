@@ -1,0 +1,103 @@
+import { InjectModel } from '@nestjs/mongoose';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import * as path from 'path';
+import { Model } from 'mongoose';
+import { Teacher } from './teacher.models';
+import { ITeacher } from './interface/teacher.interface';
+import { CreateTeacherDto } from './dto/create-teacher.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { UpdateTeacherDto } from './dto/update-teacher.dto';
+
+@Injectable()
+export class TeacherService {
+  constructor(
+    @InjectModel(Teacher.name) private teacherModule: Model<ITeacher>,
+    private cloudinaryService: CloudinaryService,
+  ) {}
+
+  async createTeacher(
+    dto: CreateTeacherDto,
+    teacherImagePreview: Express.Multer.File,
+  ) {
+    const query = {
+      surname: dto.surname,
+      name: dto.name,
+    };
+
+    const candidate = await this.teacherModule.find(query);
+    if (candidate.length > 0) {
+      throw new HttpException(
+        "Фахівець з таким ім'ям або фамілією вже існує",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const teacherUpload: Partial<CreateTeacherDto> = { ...dto };
+
+    if (teacherImagePreview) {
+      const folder = teacherImagePreview.fieldname;
+      const publicId = path.parse(teacherImagePreview.originalname).name;
+
+      const teacherImage = (
+        await this.cloudinaryService.uploadFile(
+          teacherImagePreview,
+          folder,
+          publicId,
+        )
+      ).secure_url;
+      teacherUpload.teacherImage = teacherImage;
+    }
+
+    const teacher = await this.teacherModule.create(teacherUpload);
+
+    return teacher;
+  }
+
+  async updateTeacher(
+    _id: string,
+    dto: UpdateTeacherDto,
+    teacherImagePreview: Express.Multer.File,
+  ) {
+    const teacherUpload: Partial<UpdateTeacherDto> = { ...dto };
+
+    if (teacherImagePreview) {
+      const folder = teacherImagePreview.fieldname;
+      const publicId = path.parse(teacherImagePreview.originalname).name;
+
+      const teacherImage = (
+        await this.cloudinaryService.uploadFile(
+          teacherImagePreview,
+          folder,
+          publicId,
+        )
+      ).secure_url;
+      teacherUpload.teacherImage = teacherImage;
+    }
+
+    const updateTeacher = await this.teacherModule.findByIdAndUpdate(
+      _id,
+      teacherUpload,
+      { new: true },
+    );
+    if (!updateTeacher) {
+      throw new Error('Child not found');
+    }
+
+    return updateTeacher;
+  }
+
+  async getTeachers() {
+    const teachers = await this.teacherModule.find().exec();
+    return teachers;
+  }
+
+  async getTeacherById(id: string) {
+    const teacher = await this.teacherModule.findById({ _id: id });
+    return teacher;
+  }
+
+  async deleteTeacherById(id: string) {
+    await this.teacherModule.deleteOne({ _id: id });
+
+    return `Successful delete`;
+  }
+}

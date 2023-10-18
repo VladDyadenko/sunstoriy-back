@@ -46,6 +46,10 @@ export class ChildController {
   ) {
     try {
       const user = req.user;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
       const child = await this.childService.createChild(
         createChildDto,
         files.childImage,
@@ -115,8 +119,12 @@ export class ChildController {
         message: 'Неавторизований користувач',
       });
     }
+    const children = await this.childService.getChildren();
+    if (!children) {
+      throw new NotFoundException('Children not found');
+    }
 
-    return await this.childService.getChildren();
+    return children;
   }
 
   @Get(':id')
@@ -130,7 +138,7 @@ export class ChildController {
     }
     const child = await this.childService.getChildById(id);
     if (!child) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Child not found');
     }
     return child;
   }
