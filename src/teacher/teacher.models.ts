@@ -18,7 +18,7 @@ export class Teacher {
   @Prop()
   phone?: string;
 
-  @Prop({ unique: true })
+  @Prop()
   email: string;
 
   @Prop()
@@ -28,6 +28,6 @@ export class Teacher {
   about?: string;
 
   @Prop()
-  specialization?: string[];
+  specialization?: [string];
 }
 export const TeacherSchema = SchemaFactory.createForClass(Teacher);

@@ -9,5 +9,6 @@ export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {
   email?: string;
   color?: string;
   about?: string;
-  specialization?: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  specialization?: any;
 }

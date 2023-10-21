@@ -19,19 +19,19 @@ export class TeacherService {
     dto: CreateTeacherDto,
     teacherImagePreview: Express.Multer.File,
   ) {
-    const query = {
-      surname: dto.surname,
-      name: dto.name,
-    };
+    // const query = {
+    //   surname: dto.surname,
+    // };
 
-    const candidate = await this.teacherModule.find(query);
-    if (candidate.length > 0) {
-      throw new HttpException(
-        "Фахівець з таким ім'ям або фамілією вже існує",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    // const candidate = await this.teacherModule.find(query);
+    // if (candidate.length > 0) {
+    //   throw new HttpException(
+    //     "Фахівець з таким ім'ям або фамілією вже існує",
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
     const teacherUpload: Partial<CreateTeacherDto> = { ...dto };
+    teacherUpload.specialization = dto.specialization.split(',');
 
     if (teacherImagePreview) {
       const folder = teacherImagePreview.fieldname;
@@ -58,6 +58,7 @@ export class TeacherService {
     teacherImagePreview: Express.Multer.File,
   ) {
     const teacherUpload: Partial<UpdateTeacherDto> = { ...dto };
+    teacherUpload.specialization = dto.specialization.split(',');
 
     if (teacherImagePreview) {
       const folder = teacherImagePreview.fieldname;
@@ -72,7 +73,6 @@ export class TeacherService {
       ).secure_url;
       teacherUpload.teacherImage = teacherImage;
     }
-
     const updateTeacher = await this.teacherModule.findByIdAndUpdate(
       _id,
       teacherUpload,

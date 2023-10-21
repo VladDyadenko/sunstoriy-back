@@ -8,5 +8,5 @@ export interface ITeacher extends Document {
   readonly email: string;
   readonly color: string;
   readonly about: string;
-  readonly specialization: string[];
+  readonly specialization: string;
 }
