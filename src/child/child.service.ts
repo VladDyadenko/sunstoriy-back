@@ -12,6 +12,8 @@ import { User } from 'src/users/user.models';
 import uploadChildFiles from './common/uploadFileFunction';
 import { UpdateChildDto } from './dto/update-child.dto';
 
+const ITEMS_PER_PAGE = 10;
+
 @Injectable()
 export class ChildService {
   constructor(
@@ -119,10 +121,60 @@ export class ChildService {
     return updatedChild;
   }
 
-  async getChildren() {
-    const children = await this.childModule.find().exec();
+  async getChildren(page: number, query: object) {
+    const skip = (page - 1) * ITEMS_PER_PAGE;
+    const collation = {
+      locale: 'uk',
+      caseLevel: true,
+    };
 
-    return children;
+    const count = await this.childModule.estimatedDocumentCount(query);
+    const children = await this.childModule
+      .find(query)
+      .collation(collation)
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(ITEMS_PER_PAGE);
+
+    const pageCount = Math.ceil(count / ITEMS_PER_PAGE);
+
+    return {
+      pagination: {
+        count,
+        pageCount,
+        page,
+      },
+      children,
+    };
+  }
+
+  async getChildrenByPartialName(letters: string[]) {
+    const collation = {
+      locale: 'uk',
+      caseLevel: true,
+    };
+
+    const regexArray = letters.map((letter) => new RegExp(`^${letter}`, 'i'));
+
+    const count = await this.childModule.countDocuments({
+      name: { $in: regexArray },
+    });
+
+    const child = await this.childModule
+      .find({ name: { $in: regexArray } })
+      .collation(collation)
+      .sort({ name: 1 })
+      .limit(ITEMS_PER_PAGE);
+
+    const pageCount = Math.ceil(count / ITEMS_PER_PAGE);
+
+    return {
+      pagination: {
+        count,
+        pageCount,
+      },
+      child,
+    };
   }
 
   async getChildById(id: string) {
@@ -133,7 +185,7 @@ export class ChildService {
   }
   async deleteChildById(id: string, user: IUser) {
     await this.childModule.deleteOne({ _id: id });
-    await this.userModule.findByIdAndUpdate(
+    const updatedUser = await this.userModule.findByIdAndUpdate(
       user._id,
       {
         $pull: {
@@ -142,8 +194,17 @@ export class ChildService {
       },
       { new: true },
     );
+    const count = await this.childModule.countDocuments({
+      _id: { $in: updatedUser.children },
+    });
+    const pageCount = Math.ceil(count / ITEMS_PER_PAGE);
 
-    return `Successful delete`;
+    return {
+      pagination: {
+        count,
+        pageCount,
+      },
+    };
   }
   // async getUploadFile(filePath: string) {
   //   const fileData = await readUploadedFile(filePath);

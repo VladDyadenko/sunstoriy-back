@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as path from 'path';
 import { Model } from 'mongoose';
 import { Teacher } from './teacher.models';

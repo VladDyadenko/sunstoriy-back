@@ -13,6 +13,7 @@ import {
   Param,
   NotFoundException,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { ChildService } from './child.service';
 import { Express } from 'express';
@@ -111,47 +112,129 @@ export class ChildController {
   }
 
   @Get()
-  async getAll(@Request() req) {
-    const user = req.user;
+  async getAll(@Request() req, @Res() res) {
+    try {
+      const user = req.user;
 
-    if (!user) {
-      throw new UnauthorizedException({
-        message: 'Неавторизований користувач',
+      if (!user) {
+        throw new UnauthorizedException({
+          message: 'Неавторизований користувач',
+        });
+      }
+
+      const page = +req.query.page || 1;
+      const query = {};
+
+      const data = await this.childService.getChildren(page, query);
+      if (!data) {
+        throw new NotFoundException('Children not found');
+      }
+
+      return res.status(HttpStatus.OK).json(data);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
       });
     }
-    const children = await this.childService.getChildren();
-    if (!children) {
-      throw new NotFoundException('Children not found');
-    }
-
-    return children;
   }
 
-  @Get(':id')
-  async getChildById(@Request() req, @Param('id') id: string) {
-    const user = req.user;
+  @Get('children/:id')
+  async getChildById(@Request() req, @Param('id') id: string, @Res() res) {
+    try {
+      const user = req.user;
 
-    if (!user) {
-      throw new UnauthorizedException({
-        message: 'Неавторизований користувач',
+      if (!user) {
+        throw new UnauthorizedException({
+          message: 'Неавторизований користувач',
+        });
+      }
+      const child = await this.childService.getChildById(id);
+      if (!child) {
+        throw new NotFoundException('Child not found');
+      }
+      return res.status(HttpStatus.OK).json(child);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
       });
     }
-    const child = await this.childService.getChildById(id);
-    if (!child) {
-      throw new NotFoundException('Child not found');
+  }
+
+  @Get('/search')
+  async getChildByName(
+    @Query('query') query: string,
+    @Request() req,
+    @Res() res,
+  ) {
+    try {
+      const user = req.user;
+
+      if (!user) {
+        throw new UnauthorizedException({
+          message: 'Неавторизований користувач',
+        });
+      }
+      if (!query || query.length < 1) {
+        throw new NotFoundException('Invalid query');
+      }
+
+      const letters = query.split('');
+      let results = [];
+      let partialQuery = '';
+      let pagination = {};
+
+      for (let i = 0; i < letters.length; i++) {
+        partialQuery += letters[i];
+
+        const data = await this.childService.getChildrenByPartialName([
+          partialQuery,
+        ]);
+
+        if (data.child.length > 0) {
+          results.push(data.child);
+          pagination = data.pagination;
+        } else {
+          results = [];
+          pagination = {};
+        }
+      }
+
+      const children = results.length > 0 ? results[results.length - 1] : [];
+
+      return res.status(HttpStatus.OK).json({
+        pagination,
+        children,
+      });
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
     }
-    return child;
   }
 
   @Patch('delete/:id')
-  async deleteChild(@Param('id') id: string, @Request() req) {
-    const user = req.user;
+  async deleteChild(@Param('id') id: string, @Request() req, @Res() res) {
+    try {
+      const user = req.user;
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const result = await this.childService.deleteChildById(id, user);
+      return res.status(HttpStatus.OK).json(result);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
     }
-
-    return await this.childService.deleteChildById(id, user);
   }
 
   // @Get('file')
