@@ -31,6 +31,8 @@ export class CreateUserDto {
   })
   password: string;
 
+  role: string;
+
   token?: string;
 
   avatarUrl?: string;

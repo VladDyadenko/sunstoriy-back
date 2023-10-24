@@ -14,18 +14,24 @@ import {
   NotFoundException,
   Patch,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ChildService } from './child.service';
 import { Express } from 'express';
 import { CreateChildDto } from './dto/create-child.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateChildDto } from './dto/update-child.dto';
+import { Roles } from 'src/roles/roles.decorator';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Role } from 'src/roles/role.enum';
 
 @Controller('/child')
+@UseGuards(RolesGuard)
 export class ChildController {
   constructor(private childService: ChildService) {}
 
   @Post()
+  @Roles(Role.Admin, Role.Teacher)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'childImage', maxCount: 1 },
@@ -68,6 +74,7 @@ export class ChildController {
   }
 
   @Put(':id')
+  @Roles(Role.Admin, Role.Teacher)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'childImage', maxCount: 1 },
@@ -112,6 +119,7 @@ export class ChildController {
   }
 
   @Get()
+  @Roles(Role.Admin, Role.User, Role.Teacher)
   async getAll(@Request() req, @Res() res) {
     try {
       const user = req.user;
@@ -141,6 +149,7 @@ export class ChildController {
   }
 
   @Get('children/:id')
+  @Roles(Role.Admin, Role.User, Role.Teacher)
   async getChildById(@Request() req, @Param('id') id: string, @Res() res) {
     try {
       const user = req.user;
@@ -165,6 +174,7 @@ export class ChildController {
   }
 
   @Get('/search')
+  @Roles(Role.Admin, Role.User, Role.Teacher)
   async getChildByName(
     @Query('query') query: string,
     @Request() req,
@@ -219,6 +229,7 @@ export class ChildController {
   }
 
   @Patch('delete/:id')
+  @Roles(Role.Admin)
   async deleteChild(@Param('id') id: string, @Request() req, @Res() res) {
     try {
       const user = req.user;
@@ -230,7 +241,7 @@ export class ChildController {
       return res.status(HttpStatus.OK).json(result);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
-        statusCode: 400,
+        statusCode: 401,
         message: err.message,
         error: 'Bad Request',
       });

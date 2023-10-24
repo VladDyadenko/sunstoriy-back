@@ -1,6 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from './roles.models';
 import { ROLES_KEY } from './roles.decorator';
 
 @Injectable()
@@ -8,7 +12,7 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<string>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -16,6 +20,11 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    return requiredRoles.some((role) => user.roles?.includes(role));
+    const hasRequiredRole = requiredRoles.includes(user.role);
+    if (!hasRequiredRole) {
+      const errorMessage = 'Недостатньо прав для виконання!';
+      throw new UnauthorizedException({ message: errorMessage });
+    }
+    return true;
   }
 }
