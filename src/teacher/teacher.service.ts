@@ -85,6 +85,24 @@ export class TeacherService {
     return updateTeacher;
   }
 
+  async getTeacherByPartialName(letters: string[]) {
+    const collation = {
+      locale: 'uk',
+      caseLevel: true,
+    };
+
+    const regexArray = letters.map((letter) => new RegExp(`^${letter}`, 'i'));
+
+    const teacher = await this.teacherModule
+      .find({ name: { $in: regexArray } })
+      .collation(collation)
+      .sort({ name: 1 });
+
+    return {
+      teacher,
+    };
+  }
+
   async getTeachers() {
     const teachers = await this.teacherModule.find().exec();
     return teachers;

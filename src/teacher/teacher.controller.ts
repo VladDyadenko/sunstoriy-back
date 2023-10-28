@@ -13,13 +13,19 @@ import {
   UnauthorizedException,
   Get,
   Patch,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TeacherService } from './teacher.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'src/roles/role.enum';
 
 @Controller('/teacher')
+@UseGuards(RolesGuard)
 export class TeacherController {
   constructor(private teacherService: TeacherService) {}
 
@@ -110,6 +116,57 @@ export class TeacherController {
       throw new NotFoundException('Teacher not found');
     }
     return teacher;
+  }
+
+  @Get('/search')
+  @Roles(Role.Admin, Role.User, Role.Teacher)
+  async getChildByName(
+    @Query('query') query: string,
+    @Request() req,
+    @Res() res,
+  ) {
+    try {
+      const user = req.user;
+
+      if (!user) {
+        throw new UnauthorizedException({
+          message: 'Неавторизований користувач',
+        });
+      }
+      if (!query || query.length < 1) {
+        throw new NotFoundException('Invalid query');
+      }
+
+      const letters = query.split('');
+      let results = [];
+      let partialQuery = '';
+
+      for (let i = 0; i < letters.length; i++) {
+        partialQuery += letters[i];
+
+        const data = await this.teacherService.getTeacherByPartialName([
+          partialQuery,
+        ]);
+
+        if (data.teacher.length > 0) {
+          results.push(data.teacher);
+        } else {
+          results = [];
+        }
+      }
+
+      const teacher = results.length > 0 ? results[results.length - 1] : [];
+
+      return res.status(HttpStatus.OK).json({
+        teacher,
+      });
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
   }
 
   @Patch('delete/:id')
