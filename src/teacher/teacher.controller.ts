@@ -13,19 +13,14 @@ import {
   UnauthorizedException,
   Get,
   Patch,
-  UseGuards,
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TeacherService } from './teacher.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
-import { RolesGuard } from 'src/roles/roles.guard';
-import { Roles } from 'src/roles/roles.decorator';
-import { Role } from 'src/roles/role.enum';
 
 @Controller('/teacher')
-@UseGuards(RolesGuard)
 export class TeacherController {
   constructor(private teacherService: TeacherService) {}
 
@@ -102,7 +97,7 @@ export class TeacherController {
     return teachers;
   }
 
-  @Get(':id')
+  @Get('teacher/:id')
   async getTeacherById(@Request() req, @Param('id') id: string) {
     const user = req.user;
 
@@ -119,8 +114,7 @@ export class TeacherController {
   }
 
   @Get('/search')
-  @Roles(Role.Admin, Role.User, Role.Teacher)
-  async getChildByName(
+  async getTeacherByName(
     @Query('query') query: string,
     @Request() req,
     @Res() res,

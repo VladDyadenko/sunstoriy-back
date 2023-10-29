@@ -94,7 +94,7 @@ export class TeacherService {
     const regexArray = letters.map((letter) => new RegExp(`^${letter}`, 'i'));
 
     const teacher = await this.teacherModule
-      .find({ name: { $in: regexArray } })
+      .find({ name: { $in: regexArray } }, { name: 1, surname: 1 })
       .collation(collation)
       .sort({ name: 1 });
 
