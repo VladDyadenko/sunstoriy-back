@@ -9,6 +9,7 @@ import { config } from 'dotenv';
 import { ChildModule } from './child/child.module';
 import { FileModule } from './file/file.module';
 import { TeacherModule } from './teacher/teacher.module';
+import { LessonModule } from './lesson/lesson.module';
 config();
 
 @Module({
@@ -21,6 +22,7 @@ config();
     ChildModule,
     FileModule,
     TeacherModule,
+    LessonModule,
   ],
   controllers: [AuthController],
   providers: [],
