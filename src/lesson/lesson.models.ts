@@ -11,10 +11,10 @@ export class Lesson {
   office: string;
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'child' }])
-  child: string[];
+  child: string;
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'teacher' }])
-  teacher: string[];
+  teacher: string;
 
   @Prop()
   dateLesson: Date;
@@ -23,7 +23,7 @@ export class Lesson {
   timeLesson: string;
 
   @Prop()
-  plans: string;
+  plan: string;
 
   @Prop()
   review: string;

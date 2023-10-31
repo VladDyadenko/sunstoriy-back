@@ -1,27 +1,10 @@
-import { IsString, IsNumber } from 'class-validator';
-
 export class CreateLessonDto {
-  @IsString()
   office: string;
-
-  @IsString()
-  child: string[];
-
-  @IsString()
-  teacher: string[];
-
-  @IsString()
+  child: string;
+  teacher: string;
+  price: number;
+  plan: string;
+  review: string;
   dateLesson: Date;
-
-  @IsString()
   timeLesson: string;
-
-  @IsString()
-  plans?: string;
-
-  @IsString()
-  review?: string;
-
-  @IsNumber()
-  price?: string;
 }
