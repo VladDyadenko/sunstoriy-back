@@ -186,6 +186,7 @@ export class ChildService {
     });
     return child;
   }
+
   async deleteChildById(id: string, user: IUser) {
     await this.childModule.deleteOne({ _id: id });
     const updatedUser = await this.userModule.findByIdAndUpdate(

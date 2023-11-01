@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import * as mongoose from 'mongoose';
 
 import { Document } from 'mongoose';
+import { Lesson } from 'src/lesson/lesson.models';
 
 export type TeacherDocument = Teacher & Document;
 
@@ -29,5 +31,8 @@ export class Teacher {
 
   @Prop()
   specialization?: [string];
+
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'lessons' }])
+  lesson: Lesson;
 }
 export const TeacherSchema = SchemaFactory.createForClass(Teacher);

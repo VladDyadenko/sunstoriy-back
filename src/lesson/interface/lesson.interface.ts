@@ -3,9 +3,9 @@ import { Document } from 'mongoose';
 export interface ILesson extends Document {
   readonly office: string;
 
-  readonly child: string;
+  readonly child: string[];
 
-  readonly teacher: string;
+  readonly teacher: string[];
 
   readonly dateLesson: Date;
 
@@ -16,4 +16,7 @@ export interface ILesson extends Document {
   readonly review: string;
 
   readonly price: string;
+
+  // childrenData?: string[];
+  // teacherData?: string[];
 }

@@ -33,3 +33,10 @@ export class Lesson {
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);
+
+LessonSchema.set('toJSON', {
+  transform: function (doc, ret) {
+    delete ret.createdAt;
+    delete ret.updatedAt;
+  },
+});

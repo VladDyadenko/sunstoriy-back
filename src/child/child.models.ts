@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 
 import { Document } from 'mongoose';
+import { Lesson } from 'src/lesson/lesson.models';
 import { User } from 'src/users/user.models';
 
 export type ChildDocument = Child & Document;
@@ -58,5 +59,8 @@ export class Child {
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }])
   owner: User;
+
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'lessons' }])
+  lesson: Lesson;
 }
 export const ChildSchema = SchemaFactory.createForClass(Child);
