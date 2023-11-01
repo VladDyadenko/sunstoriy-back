@@ -16,7 +16,4 @@ export interface ILesson extends Document {
   readonly review: string;
 
   readonly price: string;
-
-  // childrenData?: string[];
-  // teacherData?: string[];
 }

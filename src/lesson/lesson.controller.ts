@@ -29,9 +29,23 @@ export class LessonController {
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      let lessons = []; // Сюда будут добавлены объекты lesson
 
-      const lesson = await this.lessonService.createLesson(createLessonDto);
-      return res.status(HttpStatus.CREATED).json(lesson);
+      if (typeof createLessonDto.dateLesson === 'string') {
+        // Одиночная дата, создаем один объект
+        const lesson = await this.lessonService.createLesson(createLessonDto);
+        lessons.push(lesson);
+      } else if (Array.isArray(createLessonDto.dateLesson)) {
+        // Массив дат, создаем объекты для каждой даты
+        lessons = await Promise.all(
+          createLessonDto.dateLesson.map((date) => {
+            const lessonDto = { ...createLessonDto, dateLesson: date };
+            return this.lessonService.createLesson(lessonDto);
+          }),
+        );
+      }
+
+      return res.status(HttpStatus.CREATED).json(lessons);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
