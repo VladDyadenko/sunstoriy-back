@@ -1,6 +1,4 @@
-import { CreateLessonDto } from './create-lesson.dto';
-
-export class GetLessonByOfficeAndDateDto extends CreateLessonDto {
+export class GetLessonByOfficeAndDateDto {
   office: string;
-  dateLesson: Date;
+  dateLesson: number;
 }

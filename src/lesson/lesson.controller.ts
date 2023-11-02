@@ -9,6 +9,7 @@ import {
   Get,
   UnauthorizedException,
   Param,
+  Query,
 } from '@nestjs/common';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
@@ -29,14 +30,12 @@ export class LessonController {
       if (!user) {
         throw new NotFoundException('User not found');
       }
-      let lessons = []; // Сюда будут добавлены объекты lesson
+      let lessons = [];
 
-      if (typeof createLessonDto.dateLesson === 'string') {
-        // Одиночная дата, создаем один объект
+      if (typeof createLessonDto.dateLesson === 'number') {
         const lesson = await this.lessonService.createLesson(createLessonDto);
         lessons.push(lesson);
       } else if (Array.isArray(createLessonDto.dateLesson)) {
-        // Массив дат, создаем объекты для каждой даты
         lessons = await Promise.all(
           createLessonDto.dateLesson.map((date) => {
             const lessonDto = { ...createLessonDto, dateLesson: date };
@@ -44,7 +43,6 @@ export class LessonController {
           }),
         );
       }
-
       return res.status(HttpStatus.CREATED).json(lessons);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
@@ -97,11 +95,12 @@ export class LessonController {
       });
     }
   }
-  @Get('/lesson/office/office_date')
-  async getLessonByOfice(
+
+  @Get('/office/office_date')
+  async getLessonByOffice(
     @Request() req,
     @Res() res,
-    @Body() dto: GetLessonByOfficeAndDateDto,
+    @Query() query: GetLessonByOfficeAndDateDto, // Изменение здесь
   ) {
     try {
       const user = req.user;
@@ -112,15 +111,29 @@ export class LessonController {
         });
       }
 
-      const lesson = await this.lessonService.getLessonByOfficeAndDate(dto);
+      let lessons = [];
 
-      if (!lesson.length) {
+      if (typeof query.dateLesson === 'string') {
+        query.dateLesson = parseInt(query.dateLesson, 10);
+        const lesson = await this.lessonService.getLessonByOfficeAndDate(query);
+        lessons.push(lesson);
+      } else if (Array.isArray(query.dateLesson)) {
+        lessons = await Promise.all(
+          query.dateLesson.map((date) => {
+            const lessonDto = { ...query, dateLesson: parseInt(date, 10) };
+            return this.lessonService.getLessonByOfficeAndDate(lessonDto);
+          }),
+        );
+      }
+      const isNotEmpty = lessons.some((lessonArray) => lessonArray.length > 0);
+
+      if (!isNotEmpty) {
         return res
           .status(HttpStatus.OK)
           .json({ message: 'Заняття не заплановані!' });
       }
 
-      return res.status(HttpStatus.CREATED).json(lesson);
+      return res.status(HttpStatus.CREATED).json(lessons);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
