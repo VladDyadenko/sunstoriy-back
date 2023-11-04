@@ -1,6 +1,18 @@
-// lessonUtils.ts
+import { Model } from 'mongoose';
+import { CreateLessonDto } from './dto/create-lesson.dto';
+import { ILesson } from './interface/lesson.interface';
 
-export async function checkLessonAvailability(lessonModule, dto) {
+export async function checkLessonAvailability(
+  lessonModule: Model<ILesson>,
+  dto: Partial<CreateLessonDto>,
+) {
+  if (!dto.dateLesson || !dto.timeLesson || !dto.office || !dto.teacher) {
+    return {
+      isAvailable: false,
+      message: "Дата, час, кабінет та фахівець обов'язкові!",
+    };
+  }
+
   const queryLessonOffice = {
     dateLesson: dto.dateLesson,
     timeLesson: dto.timeLesson,

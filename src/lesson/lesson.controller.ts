@@ -100,7 +100,7 @@ export class LessonController {
   async getLessonByOffice(
     @Request() req,
     @Res() res,
-    @Query() query: GetLessonByOfficeAndDateDto, // Изменение здесь
+    @Query() query: GetLessonByOfficeAndDateDto,
   ) {
     try {
       const user = req.user;

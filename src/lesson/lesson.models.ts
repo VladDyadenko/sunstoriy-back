@@ -7,19 +7,27 @@ export type TeacherDocument = Lesson & Document;
 
 @Schema({ versionKey: false, timestamps: true })
 export class Lesson {
-  @Prop()
+  @Prop({ required: true })
   office: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'child' }])
+  @Prop([
+    { type: mongoose.Schema.Types.ObjectId, ref: 'child', required: true },
+  ])
   child: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'teacher' }])
+  @Prop([
+    { type: mongoose.Schema.Types.ObjectId, ref: 'teacher', required: true },
+  ])
   teacher: string;
 
-  @Prop()
+  @Prop({
+    required: true,
+  })
   dateLesson: Date;
 
-  @Prop()
+  @Prop({
+    required: true,
+  })
   timeLesson: string;
 
   @Prop()
