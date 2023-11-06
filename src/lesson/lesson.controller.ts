@@ -115,16 +115,31 @@ export class LessonController {
 
       if (typeof query.dateLesson === 'string') {
         query.dateLesson = parseInt(query.dateLesson, 10);
-        const lesson = await this.lessonService.getLessonByOfficeAndDate(query);
-        lessons.push(lesson);
+        lessons = await Promise.all(
+          query.offices.map((office: string) => {
+            return this.lessonService.getLessonByOfficeAndDate({
+              ...query,
+              offices: office,
+            });
+          }),
+        );
       } else if (Array.isArray(query.dateLesson)) {
         lessons = await Promise.all(
-          query.dateLesson.map((date) => {
-            const lessonDto = { ...query, dateLesson: parseInt(date, 10) };
-            return this.lessonService.getLessonByOfficeAndDate(lessonDto);
+          query.offices.map((office: string) => {
+            return Promise.all(
+              query.dateLesson.map((date: string) => {
+                return this.lessonService.getLessonByOfficeAndDate({
+                  offices: office,
+                  dateLesson: parseInt(date, 10),
+                });
+              }),
+            ).then((resultArray) => {
+              return resultArray.filter((result) => result.length > 0);
+            });
           }),
         );
       }
+
       const isNotEmpty = lessons.some((lessonArray) => lessonArray.length > 0);
 
       if (!isNotEmpty) {
@@ -133,7 +148,7 @@ export class LessonController {
           .json({ message: 'Заняття не заплановані!' });
       }
 
-      return res.status(HttpStatus.CREATED).json(lessons);
+      return res.status(HttpStatus.CREATED).json(lessons.flat());
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,

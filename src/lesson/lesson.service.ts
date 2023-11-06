@@ -85,7 +85,7 @@ export class LessonService {
     const lessons = await this.lessonModule
       .find(
         {
-          $and: [{ office: dto.office }, { dateLesson: formattedDate }],
+          $and: [{ office: dto.offices }, { dateLesson: formattedDate }],
         },
         { createdAt: 0, updatedAt: 0 },
       )
