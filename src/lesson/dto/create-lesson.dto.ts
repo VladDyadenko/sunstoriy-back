@@ -7,4 +7,9 @@ export class CreateLessonDto {
   review: string;
   dateLesson: Date;
   timeLesson: string;
+  childName: string;
+  childSurname: string;
+  teacherName: string;
+  teacherSurname: string;
+  teacherColor: string;
 }

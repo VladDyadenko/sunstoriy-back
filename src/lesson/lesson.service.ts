@@ -57,24 +57,7 @@ export class LessonService {
 
   async getLessonById(id: string) {
     const lesson = await this.lessonModule.findById({ _id: id });
-    const childId = lesson.child;
-    const teacherId = lesson.teacher;
-
-    const child = await this.childModule
-      .findById({ _id: childId })
-      .select({ name: 1, surname: 1, _id: 0 })
-      .exec();
-
-    const teacher = await this.teacherModule
-      .findById({ _id: teacherId })
-      .select({ name: 1, surname: 1, _id: 0 })
-      .exec();
-
-    return {
-      child,
-      teacher,
-      lesson,
-    };
+    return lesson;
   }
 
   async getLessonByOfficeAndDate(dto: GetLessonByOfficeAndDateDto) {
@@ -90,26 +73,6 @@ export class LessonService {
         { createdAt: 0, updatedAt: 0 },
       )
       .sort({ timeLesson: 1 });
-
-    const lessonData = await Promise.all(
-      lessons.map(async (lesson) => {
-        const childrenData = await this.childModule
-          .findById({ _id: lesson.child })
-          .select({ name: 1, surname: 1, _id: 1 });
-
-        const teachersData = await this.teacherModule
-          .findById({ _id: lesson.teacher })
-          .select({ name: 1, surname: 1, color: 1, _id: 1 });
-
-        const populatedLesson = {
-          lesson,
-          childrenData,
-          teachersData,
-        };
-
-        return populatedLesson;
-      }),
-    );
-    return lessonData;
+    return lessons;
   }
 }

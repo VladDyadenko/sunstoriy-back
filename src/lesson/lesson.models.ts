@@ -10,14 +10,14 @@ export class Lesson {
   @Prop({ required: true })
   office: string;
 
-  @Prop([
-    { type: mongoose.Schema.Types.ObjectId, ref: 'child', required: true },
-  ])
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'child', required: true })
   child: string;
 
-  @Prop([
-    { type: mongoose.Schema.Types.ObjectId, ref: 'teacher', required: true },
-  ])
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'teacher',
+    required: true,
+  })
   teacher: string;
 
   @Prop({
@@ -32,6 +32,21 @@ export class Lesson {
 
   @Prop()
   plan: string;
+
+  @Prop()
+  childName: string;
+
+  @Prop()
+  childSurname: string;
+
+  @Prop()
+  teacherName: string;
+
+  @Prop()
+  teacherSurname: string;
+
+  @Prop()
+  teacherColor: string;
 
   @Prop()
   review: string;

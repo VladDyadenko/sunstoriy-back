@@ -80,13 +80,13 @@ export class LessonController {
         });
       }
 
-      const lessonData = await this.lessonService.getLessonById(id);
+      const lesson = await this.lessonService.getLessonById(id);
 
-      if (!lessonData) {
+      if (!lesson) {
         throw new NotFoundException('Заняття не існує!');
       }
 
-      return res.status(HttpStatus.CREATED).json(lessonData);
+      return res.status(HttpStatus.CREATED).json(lesson);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
