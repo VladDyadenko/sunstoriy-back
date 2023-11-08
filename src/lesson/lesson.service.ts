@@ -72,7 +72,7 @@ export class LessonService {
         },
         { createdAt: 0, updatedAt: 0 },
       )
-      .sort({ timeLesson: 1 });
+      .sort({ dateLesson: 1, timeLesson: 1 });
     return lessons;
   }
 }

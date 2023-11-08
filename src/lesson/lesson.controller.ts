@@ -111,6 +111,12 @@ export class LessonController {
         });
       }
 
+      if (!query.dateLesson) {
+        return res
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'Виберіть дату або період!' });
+      }
+
       let lessons = [];
 
       if (typeof query.dateLesson === 'string') {
@@ -145,7 +151,7 @@ export class LessonController {
       if (!isNotEmpty) {
         return res
           .status(HttpStatus.NOT_FOUND)
-          .json({ message: 'Занятий на этот день нет!' });
+          .json({ message: 'Заняття на цей день не заплановані!' });
       }
 
       return res.status(HttpStatus.CREATED).json(lessons.flat());
