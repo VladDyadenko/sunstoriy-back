@@ -57,7 +57,7 @@ export class Child {
   @Prop()
   childFiles?: string[];
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }])
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users' })
   owner: User;
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'lessons' }])

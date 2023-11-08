@@ -116,8 +116,8 @@ export class LessonController {
       if (typeof query.dateLesson === 'string') {
         query.dateLesson = parseInt(query.dateLesson, 10);
         lessons = await Promise.all(
-          query.offices.map((office: string) => {
-            return this.lessonService.getLessonByOfficeAndDate({
+          query.offices.map(async (office: string) => {
+            return await this.lessonService.getLessonByOfficeAndDate({
               ...query,
               offices: office,
             });
@@ -125,10 +125,10 @@ export class LessonController {
         );
       } else if (Array.isArray(query.dateLesson)) {
         lessons = await Promise.all(
-          query.offices.map((office: string) => {
-            return Promise.all(
-              query.dateLesson.map((date: string) => {
-                return this.lessonService.getLessonByOfficeAndDate({
+          query.offices.map(async (office: string) => {
+            return await Promise.all(
+              query.dateLesson.map(async (date: string) => {
+                return await this.lessonService.getLessonByOfficeAndDate({
                   offices: office,
                   dateLesson: parseInt(date, 10),
                 });
@@ -144,8 +144,8 @@ export class LessonController {
 
       if (!isNotEmpty) {
         return res
-          .status(HttpStatus.OK)
-          .json({ message: 'Заняття не заплановані!' });
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'Занятий на этот день нет!' });
       }
 
       return res.status(HttpStatus.CREATED).json(lessons.flat());
