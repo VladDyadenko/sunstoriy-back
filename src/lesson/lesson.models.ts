@@ -28,7 +28,7 @@ export class Lesson {
   @Prop({
     required: true,
   })
-  timeLesson: string;
+  timeLesson: Date[];
 
   @Prop()
   plan: string;

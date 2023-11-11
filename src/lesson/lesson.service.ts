@@ -10,6 +10,7 @@ import { Teacher } from 'src/teacher/teacher.models';
 import { ITeacher } from 'src/teacher/interface/teacher.interface';
 import { checkLessonAvailability } from './lessonUtils';
 import { GetLessonByOfficeAndDateDto } from './dto/get-lesson-office.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 
 @Injectable()
 export class LessonService {
@@ -47,6 +48,17 @@ export class LessonService {
       { new: true },
     );
 
+    return lesson;
+  }
+
+  async updateLesson(_id: string, dto: UpdateLessonDto) {
+    const lesson = await this.lessonModule.findByIdAndUpdate(_id, dto, {
+      new: true,
+    });
+
+    if (!lesson) {
+      throw new Error('Заняття не знайдено');
+    }
     return lesson;
   }
 

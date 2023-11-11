@@ -6,7 +6,7 @@ export class CreateLessonDto {
   plan: string;
   review: string;
   dateLesson: Date;
-  timeLesson: string;
+  timeLesson: Date[];
   childName: string;
   childSurname: string;
   teacherName: string;

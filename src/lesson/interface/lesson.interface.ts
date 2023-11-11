@@ -9,7 +9,7 @@ export interface ILesson extends Document {
 
   readonly dateLesson: Date;
 
-  readonly timeLesson: string;
+  readonly timeLesson: Date[];
 
   readonly childName: string;
 

@@ -10,10 +10,12 @@ import {
   UnauthorizedException,
   Param,
   Query,
+  Put,
 } from '@nestjs/common';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { GetLessonByOfficeAndDateDto } from './dto/get-lesson-office.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 
 @Controller('/lesson')
 export class LessonController {
@@ -30,6 +32,7 @@ export class LessonController {
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      console.log(createLessonDto);
       let lessons = [];
 
       if (typeof createLessonDto.dateLesson === 'number') {
@@ -44,6 +47,45 @@ export class LessonController {
         );
       }
       return res.status(HttpStatus.CREATED).json(lessons);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Put(':id')
+  async updateLesson(
+    @Param('id') id: string,
+    @Request() req,
+    @Res() res,
+    @Body() dto: UpdateLessonDto,
+  ) {
+    try {
+      const user = req.user;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const lesson = await this.lessonService.updateLesson(id, dto);
+      // let lessons = [];
+
+      // if (typeof updateLessonDto.dateLesson === 'number') {
+      //   const lesson = await this.lessonService.updateLesson(
+      //     id,
+      //     updateLessonDto,
+      //   );
+      //   lessons.push(lesson);
+      // } else if (Array.isArray(updateLessonDto.dateLesson)) {
+      //   lessons = await Promise.all(
+      //     updateLessonDto.dateLesson.map((date) => {
+      //       const lessonDto = { ...updateLessonDto, dateLesson: date };
+      //       return this.lessonService.updateLesson(id, lessonDto);
+      //     }),
+      //   );
+      // }
+      return res.status(HttpStatus.CREATED).json(lesson);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
