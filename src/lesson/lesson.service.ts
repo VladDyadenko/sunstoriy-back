@@ -73,7 +73,7 @@ export class LessonService {
   }
 
   async getLessonByOfficeAndDate(dto: GetLessonByOfficeAndDateDto) {
-    const numericDate = dto.dateLesson;
+    const numericDate = dto.dateCurrentLesson;
     const dateObject = new Date(numericDate);
     const formattedDate = dateObject.toISOString();
 
@@ -85,6 +85,7 @@ export class LessonService {
         { createdAt: 0, updatedAt: 0 },
       )
       .sort({ dateLesson: 1, timeLesson: 1 });
+
     return lessons;
   }
 }

@@ -32,7 +32,7 @@ export class LessonController {
       if (!user) {
         throw new NotFoundException('User not found');
       }
-      console.log(createLessonDto);
+
       let lessons = [];
 
       if (typeof createLessonDto.dateLesson === 'number') {
@@ -153,7 +153,7 @@ export class LessonController {
         });
       }
 
-      if (!query.dateLesson) {
+      if (!query.dateCurrentLesson) {
         return res
           .status(HttpStatus.NOT_FOUND)
           .json({ message: 'Виберіть дату або період!' });
@@ -161,8 +161,8 @@ export class LessonController {
 
       let lessons = [];
 
-      if (typeof query.dateLesson === 'string') {
-        query.dateLesson = parseInt(query.dateLesson, 10);
+      if (typeof query.dateCurrentLesson === 'string') {
+        query.dateCurrentLesson = parseInt(query.dateCurrentLesson, 10);
         lessons = await Promise.all(
           query.offices.map(async (office: string) => {
             return await this.lessonService.getLessonByOfficeAndDate({
@@ -171,18 +171,19 @@ export class LessonController {
             });
           }),
         );
-      } else if (Array.isArray(query.dateLesson)) {
+      } else if (Array.isArray(query.dateCurrentLesson)) {
         lessons = await Promise.all(
-          query.offices.map(async (office: string) => {
+          query.dateCurrentLesson.map(async (date: string) => {
             return await Promise.all(
-              query.dateLesson.map(async (date: string) => {
+              query.offices.map(async (office: string) => {
                 return await this.lessonService.getLessonByOfficeAndDate({
                   offices: office,
-                  dateLesson: parseInt(date, 10),
+                  dateCurrentLesson: parseInt(date, 10),
                 });
               }),
             ).then((resultArray) => {
-              return resultArray.filter((result) => result.length > 0);
+              const lessons = resultArray.filter((result) => result.length > 0);
+              return lessons;
             });
           }),
         );
@@ -195,6 +196,26 @@ export class LessonController {
           .status(HttpStatus.NOT_FOUND)
           .json({ message: 'Заняття на цей день не заплановані!' });
       }
+
+      function flattenDeep(arr: string[]): string[] {
+        return arr.reduce(
+          (acc, val) =>
+            Array.isArray(val) ? acc.concat(flattenDeep(val)) : acc.concat(val),
+          [],
+        );
+      }
+
+      lessons = flattenDeep(lessons);
+
+      lessons = lessons.sort((a, b) => {
+        if (a && b) {
+          const dateA = new Date(a.timeLesson[0]).getTime();
+          const dateB = new Date(b.timeLesson[0]).getTime();
+          return dateA - dateB;
+        } else {
+          return 0;
+        }
+      });
 
       return res.status(HttpStatus.CREATED).json(lessons.flat());
     } catch (err) {
