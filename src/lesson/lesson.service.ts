@@ -88,4 +88,36 @@ export class LessonService {
 
     return lessons;
   }
+
+  async deleteLessonById(id: string) {
+    const lesson = await this.lessonModule.findById({ _id: id });
+
+    const { child, teacher } = lesson;
+
+    await this.childModule.findByIdAndUpdate(
+      {
+        _id: child,
+      },
+      {
+        $pull: {
+          lesson: id,
+        },
+      },
+      { new: true },
+    );
+    await this.teacherModule.findByIdAndUpdate(
+      {
+        _id: teacher,
+      },
+      {
+        $pull: {
+          lesson: id,
+        },
+      },
+      { new: true },
+    );
+
+    await this.lessonModule.deleteOne({ _id: id });
+    return `Successful delete`;
+  }
 }

@@ -11,6 +11,7 @@ import {
   Param,
   Query,
   Put,
+  Patch,
 } from '@nestjs/common';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
@@ -69,22 +70,7 @@ export class LessonController {
         throw new NotFoundException('User not found');
       }
       const lesson = await this.lessonService.updateLesson(id, dto);
-      // let lessons = [];
 
-      // if (typeof updateLessonDto.dateLesson === 'number') {
-      //   const lesson = await this.lessonService.updateLesson(
-      //     id,
-      //     updateLessonDto,
-      //   );
-      //   lessons.push(lesson);
-      // } else if (Array.isArray(updateLessonDto.dateLesson)) {
-      //   lessons = await Promise.all(
-      //     updateLessonDto.dateLesson.map((date) => {
-      //       const lessonDto = { ...updateLessonDto, dateLesson: date };
-      //       return this.lessonService.updateLesson(id, lessonDto);
-      //     }),
-      //   );
-      // }
       return res.status(HttpStatus.CREATED).json(lesson);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
@@ -221,6 +207,24 @@ export class LessonController {
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Patch('delete/:id')
+  async deleteLesson(@Param('id') id: string, @Request() req, @Res() res) {
+    try {
+      const user = req.user;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const result = await this.lessonService.deleteLessonById(id);
+      return res.status(HttpStatus.OK).json(result);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 401,
         message: err.message,
         error: 'Bad Request',
       });
