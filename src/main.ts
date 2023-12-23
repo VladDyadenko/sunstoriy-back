@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
 
   app.enableCors({
-    origin: 'https://vladdyadenko.github.io', // Укажите домен вашего сайта
+    origin: 'https://vladdyadenko.github.io/sunstoriy/',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204,
