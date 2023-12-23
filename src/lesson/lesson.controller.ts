@@ -138,7 +138,6 @@ export class LessonController {
           message: 'Неавторизований користувач',
         });
       }
-
       if (!query.dateCurrentLesson) {
         return res
           .status(HttpStatus.NOT_FOUND)

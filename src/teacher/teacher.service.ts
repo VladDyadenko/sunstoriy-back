@@ -79,7 +79,7 @@ export class TeacherService {
       { new: true },
     );
     if (!updateTeacher) {
-      throw new Error('Child not found');
+      throw new Error('Teacher not found');
     }
 
     return updateTeacher;
