@@ -178,7 +178,7 @@ export class LessonController {
 
       if (!isNotEmpty) {
         return res
-          .status(HttpStatus.NOT_FOUND)
+          .status(HttpStatus.CREATED)
           .json({ message: 'Заняття на цей день не заплановані!' });
       }
 
