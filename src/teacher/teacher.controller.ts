@@ -14,17 +14,23 @@ import {
   Get,
   Patch,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TeacherService } from './teacher.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'src/roles/role.enum';
 
 @Controller('/teacher')
+@UseGuards(RolesGuard)
 export class TeacherController {
   constructor(private teacherService: TeacherService) {}
 
   @Post()
+  @Roles(Role.Admin)
   @UseInterceptors(FileInterceptor('teacherImage'))
   async create(
     @Request() req,
@@ -52,6 +58,7 @@ export class TeacherController {
   }
 
   @Put(':id')
+  @Roles(Role.Admin)
   @UseInterceptors(FileInterceptor('teacherImage'))
   async updateTeacher(
     @Param('id') id: string,
@@ -81,6 +88,7 @@ export class TeacherController {
   }
 
   @Get()
+  @Roles(Role.Admin, Role.Teacher, Role.User)
   async getAll(@Request() req) {
     const user = req.user;
 
@@ -98,6 +106,7 @@ export class TeacherController {
   }
 
   @Get('teacher/:id')
+  @Roles(Role.Admin, Role.Teacher, Role.User)
   async getTeacherById(@Request() req, @Param('id') id: string) {
     const user = req.user;
 
@@ -114,6 +123,7 @@ export class TeacherController {
   }
 
   @Get('/search')
+  @Roles(Role.Admin, Role.Teacher, Role.User)
   async getTeacherByName(
     @Query('query') query: string,
     @Request() req,
@@ -164,6 +174,7 @@ export class TeacherController {
   }
 
   @Patch('delete/:id')
+  @Roles(Role.Admin)
   async deleteChild(@Param('id') id: string, @Request() req) {
     const user = req.user;
 

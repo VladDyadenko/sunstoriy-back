@@ -31,7 +31,7 @@ export class ChildController {
   constructor(private childService: ChildService) {}
 
   @Post()
-  @Roles(Role.Admin, Role.Teacher)
+  @Roles(Role.Admin)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'childImage', maxCount: 1 },
@@ -74,7 +74,7 @@ export class ChildController {
   }
 
   @Put(':id')
-  @Roles(Role.Admin, Role.Teacher)
+  @Roles(Role.Admin)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'childImage', maxCount: 1 },

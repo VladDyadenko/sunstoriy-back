@@ -12,17 +12,23 @@ import {
   Query,
   Put,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { GetLessonByOfficeAndDateDto } from './dto/get-lesson-office.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'src/roles/role.enum';
 
 @Controller('/lesson')
+@UseGuards(RolesGuard)
 export class LessonController {
   constructor(private lessonService: LessonService) {}
 
   @Post()
+  @Roles(Role.Admin, Role.Teacher)
   async create(
     @Request() req,
     @Res() res,
@@ -58,6 +64,7 @@ export class LessonController {
   }
 
   @Put(':id')
+  @Roles(Role.Admin, Role.Teacher)
   async updateLesson(
     @Param('id') id: string,
     @Request() req,
@@ -70,7 +77,6 @@ export class LessonController {
         throw new NotFoundException('User not found');
       }
       const lesson = await this.lessonService.updateLesson(id, dto);
-
       return res.status(HttpStatus.CREATED).json(lesson);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
@@ -82,6 +88,7 @@ export class LessonController {
   }
 
   @Get()
+  @Roles(Role.Admin, Role.Teacher, Role.User)
   async getAll(@Request() req) {
     const user = req.user;
 
@@ -98,6 +105,7 @@ export class LessonController {
     return lessons;
   }
   @Get('/lesson/:id')
+  @Roles(Role.Admin, Role.Teacher, Role.User)
   async getLessonById(@Request() req, @Param('id') id: string, @Res() res) {
     try {
       const user = req.user;
@@ -125,6 +133,7 @@ export class LessonController {
   }
 
   @Get('/office/office_date')
+  @Roles(Role.Admin, Role.Teacher, Role.User)
   async getLessonByOffice(
     @Request() req,
     @Res() res,
@@ -213,6 +222,7 @@ export class LessonController {
   }
 
   @Patch('delete/:id')
+  @Roles(Role.Admin)
   async deleteLesson(@Param('id') id: string, @Request() req, @Res() res) {
     try {
       const user = req.user;
