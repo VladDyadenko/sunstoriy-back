@@ -1,29 +1,29 @@
 import { Document } from 'mongoose';
 
 export interface ILesson extends Document {
-  readonly office: string;
+  office: string;
 
-  readonly child: string;
+  child: string;
 
-  readonly teacher: string;
+  teacher: string;
 
-  readonly dateLesson: Date;
+  dateLesson: Date;
 
-  readonly timeLesson: Date[];
+  timeLesson: Date[];
 
-  readonly childName: string;
+  childName: string;
 
-  readonly childSurname: string;
+  childSurname: string;
 
-  readonly teacherName: string;
+  teacherName: string;
 
-  readonly teacherSurname: string;
+  teacherSurname: string;
 
-  readonly teacherColor: string;
+  teacherColor: string;
 
-  readonly plan: string;
+  plan: string;
 
-  readonly review: string;
+  review: string;
 
-  readonly price: string;
+  price: string;
 }

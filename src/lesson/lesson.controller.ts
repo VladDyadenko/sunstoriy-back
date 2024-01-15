@@ -77,6 +77,7 @@ export class LessonController {
         throw new NotFoundException('User not found');
       }
       const lesson = await this.lessonService.updateLesson(id, dto);
+
       return res.status(HttpStatus.CREATED).json(lesson);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({

@@ -52,13 +52,21 @@ export class LessonService {
   }
 
   async updateLesson(_id: string, dto: UpdateLessonDto) {
-    const lesson = await this.lessonModule.findByIdAndUpdate(_id, dto, {
+    const lesson = await this.lessonModule.findOneAndUpdate({ _id }, dto, {
       new: true,
+      lean: true,
     });
-
     if (!lesson) {
       throw new Error('Заняття не знайдено');
     }
+
+    lesson.childSurname = dto.childSurname || '';
+    lesson.plan = dto.plan || '';
+    lesson.review = dto.review || '';
+    lesson.teacherSurname = dto.teacherSurname || '';
+
+    await this.lessonModule.findByIdAndUpdate(_id, lesson);
+
     return lesson;
   }
 
