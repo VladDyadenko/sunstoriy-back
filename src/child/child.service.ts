@@ -163,7 +163,7 @@ export class ChildService {
     const child = await this.childModule
       .find(
         { name: { $in: regexArray } },
-        { name: 1, surname: 1, age: 1, mather: 1 },
+        { name: 1, surname: 1, age: 1, mather: 1, matherPhone: 1 },
       )
       .collation(collation)
       .sort({ name: 1 })

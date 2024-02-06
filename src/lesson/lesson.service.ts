@@ -64,9 +64,11 @@ export class LessonService {
     lesson.plan = dto.plan || '';
     lesson.review = dto.review || '';
     lesson.teacherSurname = dto.teacherSurname || '';
+    lesson.mather = dto.mather || '';
+    lesson.matherPhone = dto.matherPhone || '';
 
     await this.lessonModule.findByIdAndUpdate(_id, lesson);
-
+    console.log('lesson', lesson);
     return lesson;
   }
 

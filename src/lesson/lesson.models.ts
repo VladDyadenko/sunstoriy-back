@@ -40,6 +40,12 @@ export class Lesson {
   childSurname: string;
 
   @Prop()
+  mather: string;
+
+  @Prop()
+  matherPhone: string;
+
+  @Prop()
   teacherName: string;
 
   @Prop()

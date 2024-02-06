@@ -9,6 +9,8 @@ export class CreateLessonDto {
   timeLesson: Date[];
   childName: string;
   childSurname: string;
+  mather?: string;
+  matherPhone?: string;
   teacherName: string;
   teacherSurname: string;
   teacherColor: string;

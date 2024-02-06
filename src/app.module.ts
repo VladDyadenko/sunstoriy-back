@@ -10,6 +10,8 @@ import { ChildModule } from './child/child.module';
 import { FileModule } from './file/file.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { LessonModule } from './lesson/lesson.module';
+import { SmsModule } from './sms/sms.module';
+
 config();
 
 @Module({
@@ -23,8 +25,8 @@ config();
     FileModule,
     TeacherModule,
     LessonModule,
+    SmsModule,
   ],
   controllers: [AuthController],
-  providers: [],
 })
 export class AppModule {}

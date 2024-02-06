@@ -15,6 +15,10 @@ export interface ILesson extends Document {
 
   childSurname: string;
 
+  mather?: string;
+
+  matherPhone?: string;
+
   teacherName: string;
 
   teacherSurname: string;
