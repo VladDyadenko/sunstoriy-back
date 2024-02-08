@@ -6,14 +6,20 @@ import {
   Post,
   Request,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { SmsService } from './sms.service';
 import { SendSmsDto } from './dto/create-sms.dto';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'src/roles/role.enum';
 
 @Controller('sms')
+@UseGuards(RolesGuard)
 export class SmsController {
   constructor(private smsService: SmsService) {}
   @Post('/send')
+  @Roles(Role.Admin)
   async createSms(@Res() res, @Request() req, @Body() dto: SendSmsDto) {
     try {
       const user = req.user;
