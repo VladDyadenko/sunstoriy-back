@@ -30,4 +30,6 @@ export interface ILesson extends Document {
   review: string;
 
   price: string;
+
+  isSendSms: boolean;
 }

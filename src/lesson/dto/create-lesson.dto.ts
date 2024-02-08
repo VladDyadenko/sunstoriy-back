@@ -14,4 +14,5 @@ export class CreateLessonDto {
   teacherName: string;
   teacherSurname: string;
   teacherColor: string;
+  isSendSms: boolean;
 }

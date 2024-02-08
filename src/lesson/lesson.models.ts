@@ -59,6 +59,9 @@ export class Lesson {
 
   @Prop()
   price: number;
+
+  @Prop({ default: false })
+  isSendSms: boolean;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);

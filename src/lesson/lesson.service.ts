@@ -68,7 +68,6 @@ export class LessonService {
     lesson.matherPhone = dto.matherPhone || '';
 
     await this.lessonModule.findByIdAndUpdate(_id, lesson);
-    console.log('lesson', lesson);
     return lesson;
   }
 
