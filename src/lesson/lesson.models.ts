@@ -62,6 +62,9 @@ export class Lesson {
 
   @Prop({ default: false })
   isSendSms: boolean;
+
+  @Prop({ default: 'to_plan' })
+  status: string;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);

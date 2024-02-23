@@ -32,4 +32,6 @@ export interface ILesson extends Document {
   price: string;
 
   isSendSms: boolean;
+
+  status?: string;
 }

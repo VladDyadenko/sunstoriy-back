@@ -18,5 +18,5 @@ export class UpdateLessonDto extends PartialType(CreateLessonDto) {
   teacherSurname?: string;
   teacherColor?: string;
   isSendSms?: boolean;
-
+  status?: string;
 }
