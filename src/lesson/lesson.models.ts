@@ -65,6 +65,12 @@ export class Lesson {
 
   @Prop({ default: 'to_plan' })
   status: string;
+
+  @Prop()
+  paymentForm: string;
+
+  @Prop()
+  bank: string;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);

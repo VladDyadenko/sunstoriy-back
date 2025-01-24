@@ -34,4 +34,8 @@ export interface ILesson extends Document {
   isSendSms: boolean;
 
   status?: string;
+
+  paymentForm?: string;
+
+  bank?: string;
 }
