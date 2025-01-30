@@ -11,6 +11,8 @@ import { FileModule } from './file/file.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { LessonModule } from './lesson/lesson.module';
 import { SmsModule } from './sms/sms.module';
+import { OrderController } from './order/order.controller';
+import { OrderModule } from './order/order.module';
 
 config();
 
@@ -26,7 +28,8 @@ config();
     TeacherModule,
     LessonModule,
     SmsModule,
+    OrderModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, OrderController],
 })
 export class AppModule {}

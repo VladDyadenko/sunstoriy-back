@@ -38,4 +38,6 @@ export interface ILesson extends Document {
   paymentForm?: string;
 
   bank?: string;
+
+  isHappend: boolean;
 }

@@ -71,6 +71,9 @@ export class Lesson {
 
   @Prop()
   bank: string;
+
+  @Prop({ default: false })
+  isHappend: boolean;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);
