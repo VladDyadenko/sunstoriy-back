@@ -39,5 +39,7 @@ export interface ILesson extends Document {
 
   bank?: string;
 
-  isHappend: boolean;
+  isHappend?: string;
+
+  sum?: number;
 }

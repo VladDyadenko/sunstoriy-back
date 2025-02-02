@@ -72,8 +72,11 @@ export class Lesson {
   @Prop()
   bank: string;
 
-  @Prop({ default: false })
-  isHappend: boolean;
+  @Prop()
+  isHappend: string;
+
+  @Prop()
+  sum: number;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);
