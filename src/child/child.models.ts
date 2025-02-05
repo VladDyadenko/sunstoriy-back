@@ -7,7 +7,7 @@ import { User } from 'src/users/user.models';
 
 export type ChildDocument = Child & Document;
 
-@Schema({ versionKey: false, timestamps: true })
+@Schema({ versionKey: false, timestamps: false })
 export class Child {
   @Prop({ required: [true, 'Set name for child'] })
   name: string;

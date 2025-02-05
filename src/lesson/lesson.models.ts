@@ -5,7 +5,7 @@ import { Document } from 'mongoose';
 
 export type TeacherDocument = Lesson & Document;
 
-@Schema({ versionKey: false, timestamps: true })
+@Schema({ versionKey: false, timestamps: false })
 export class Lesson {
   @Prop({ required: true })
   office: string;

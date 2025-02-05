@@ -6,7 +6,7 @@ import { Lesson } from 'src/lesson/lesson.models';
 
 export type TeacherDocument = Teacher & Document;
 
-@Schema({ versionKey: false, timestamps: true })
+@Schema({ versionKey: false, timestamps: false })
 export class Teacher {
   @Prop({ required: [true, 'Set name for teacher'] })
   name: string;

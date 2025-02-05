@@ -4,7 +4,7 @@ import { Document } from 'mongoose';
 
 export type UserDocument = User & Document;
 
-@Schema({ versionKey: false, timestamps: true })
+@Schema({ versionKey: false, timestamps: false })
 export class User {
   @Prop({ required: [true, 'Set name for user'] })
   name: string;
