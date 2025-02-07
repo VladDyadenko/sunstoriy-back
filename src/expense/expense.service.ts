@@ -11,9 +11,9 @@ export class ExpenseService {
   constructor(
     @InjectModel(Expense.name) private expenseModule: Model<IExpense>,
   ) {}
-
   async createExpense(dto: CreateExpenseDto) {
     const expense = await this.expenseModule.create(dto);
+
     return expense;
   }
 
@@ -27,5 +27,9 @@ export class ExpenseService {
     }
 
     return expense;
+  }
+
+  async getExpenses() {
+    return await this.expenseModule.find().exec();
   }
 }

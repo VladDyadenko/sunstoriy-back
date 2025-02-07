@@ -183,15 +183,6 @@ export class LessonController {
           }),
         );
       }
-
-      // const isNotEmpty = lessons.some((lessonArray) => lessonArray.length > 0);
-
-      // if (!isNotEmpty) {
-      //   return res
-      //     .status(HttpStatus.NOT_FOUND)
-      //     .json({ message: 'Заняття на цей день не заплановані!' });
-      // }
-
       function flattenDeep(arr: string[]): string[] {
         return arr.reduce(
           (acc, val) =>

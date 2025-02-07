@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpStatus,
   NotFoundException,
   Param,
@@ -20,11 +21,11 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 @Controller('expense')
 @UseGuards(RolesGuard)
 export class ExpenseController {
-  constructor(private ExpenseService: ExpenseService) {}
+  constructor(private expenseService: ExpenseService) {}
 
   @Post()
   @Roles(Role.Admin)
-  async create(
+  async createExpense(
     @Request() req,
     @Res() res,
     @Body() createExpenseDto: CreateExpenseDto,
@@ -35,7 +36,7 @@ export class ExpenseController {
         throw new NotFoundException('User not found');
       }
 
-      const expense = this.ExpenseService.createExpense(createExpenseDto);
+      const expense = await this.expenseService.createExpense(createExpenseDto);
 
       return res.status(HttpStatus.CREATED).json(expense);
     } catch (err) {
@@ -61,9 +62,30 @@ export class ExpenseController {
         throw new NotFoundException('User not found');
       }
 
-      const expense = await this.ExpenseService.updateExpense(id, dto);
+      const expense = await this.expenseService.updateExpense(id, dto);
 
       return res.status(HttpStatus.CREATED).json(expense);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Get()
+  @Roles(Role.Admin)
+  async getAllExpenses(@Request() req, @Res() res) {
+    try {
+      const user = req.user;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const expenses = await this.expenseService.getExpenses();
+
+      return res.status(HttpStatus.CREATED).json(expenses);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,

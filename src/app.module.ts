@@ -12,6 +12,7 @@ import { TeacherModule } from './teacher/teacher.module';
 import { LessonModule } from './lesson/lesson.module';
 import { SmsModule } from './sms/sms.module';
 import { ExpenseModule } from './expense/expense.module';
+import { ZvitModule } from './zvit/zvit.module';
 
 config();
 
@@ -28,6 +29,7 @@ config();
     LessonModule,
     SmsModule,
     ExpenseModule,
+    ZvitModule,
   ],
   controllers: [AuthController],
 })
