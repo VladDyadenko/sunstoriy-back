@@ -10,7 +10,7 @@ import { Lesson } from 'src/lesson/lesson.models';
 import { ITeacher } from 'src/teacher/interface/teacher.interface';
 import { Teacher } from 'src/teacher/teacher.models';
 import { CreateOneMonthTotalZvitDto } from './dto/create-oneMonse-zvit.dto';
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { startOfYear, subDays } from 'date-fns';
 
 @Injectable()
 export class ZvitService {
@@ -21,29 +21,31 @@ export class ZvitService {
     @InjectModel(Expense.name) private expenseModule: Model<IExpense>,
   ) {}
 
-  async createZvitOneMonthTotal(dto: CreateOneMonthTotalZvitDto) {
+  async createZviForSelectedPeriod(dto: CreateOneMonthTotalZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
 
-    // Отримуємо початок і кінець попереднього місяця
-    const startOfPreviousMonth = startOfMonth(subMonths(startOfDay, 1));
-    const endOfPreviousMonth = endOfMonth(subMonths(startOfDay, 1));
+    // Отримуємо початок поточного року
+    const startOfCurrentYear = startOfYear(startOfDay);
 
-    // Отримуємо дані за попередній місяць
-    const previousMonthLessons = await this.lessonModule
+    // Отримуємо кінець попереднього дня (перед startOfDay)
+    const endOfPreviousPeriod = subDays(startOfDay, 1);
+
+    // Отримуємо дані від початку року до кінця попереднього дня
+    const previousPeriodLessons = await this.lessonModule
       .find({
-        dateLesson: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+        dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
       })
       .exec();
 
-    const previousMonthExpenses = await this.expenseModule
+    const previousPeriodExpenses = await this.expenseModule
       .find({
-        date: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+        date: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
       })
       .exec();
 
-    // Розраховуємо прибуток і витрати за попередній місяць
-    const previousMonthIncome = previousMonthLessons?.reduce(
+    // Розраховуємо прибуток і витрати за попередній період
+    const previousPeriodIncome = previousPeriodLessons?.reduce(
       (acc, lesson) => {
         const sum = lesson.sum || 0;
 
@@ -63,7 +65,7 @@ export class ZvitService {
       { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
     );
 
-    const previousMonthExpense = previousMonthExpenses?.reduce(
+    const previousPeriodExpense = previousPeriodExpenses?.reduce(
       (acc, expense) => {
         const amount = expense.amount || 0;
 
@@ -83,31 +85,34 @@ export class ZvitService {
       { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
     );
 
-    const previousMonthProfit = {
-      amount: previousMonthIncome.amount - previousMonthExpense.amount,
+    const previousPeriodProfit = {
+      amount: previousPeriodIncome.amount - previousPeriodExpense.amount,
       privatBank:
-        previousMonthIncome.privatBank - previousMonthExpense.privatBank,
-      monoBank: previousMonthIncome.monoBank - previousMonthExpense.monoBank,
-      cash: previousMonthIncome.cash - previousMonthExpense.cash,
+        previousPeriodIncome.privatBank - previousPeriodExpense.privatBank,
+      monoBank: previousPeriodIncome.monoBank - previousPeriodExpense.monoBank,
+      cash: previousPeriodIncome.cash - previousPeriodExpense.cash,
     };
 
-    //   уроки заданого періоду
+    // Отримуємо уроки за заданий період
     const lessonsPeriod = await this.lessonModule
       .find({
         dateLesson: { $gte: startOfDay, $lte: endOfDay },
       })
       .exec();
-    //   розходи заданого періоду
+
+    // Отримуємо розходи за заданий період
     const expensesPeriod = await this.expenseModule
       .find({
         date: { $gte: startOfDay, $lte: endOfDay },
       })
       .exec();
-    // уроки цього-ж періоду зі статусом Відпрацьовані
+
+    // Отримуємо уроки зі статусом "Відпрацьоване"
     const lessonsWorked = lessonsPeriod?.filter((lesson) => {
       return lesson.isHappend === 'Відпрацьоване';
     });
-    // усі розходи періоду
+
+    // Розраховуємо всі розходи за період
     const expense = expensesPeriod?.reduce(
       (acc, expense) => {
         const amount = expense.amount || 0;
@@ -127,7 +132,8 @@ export class ZvitService {
       },
       { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
     );
-    // всі кошти отримані за період
+
+    // Розраховуємо всі кошти, отримані за період
     const income = lessonsPeriod?.reduce(
       (acc, lesson) => {
         const sum = lesson.sum || 0;
@@ -147,21 +153,25 @@ export class ZvitService {
       },
       { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
     );
-    // кошти за відпрацьовані уроки по тарифу
+
+    // Розраховуємо кошти за відпрацьовані уроки по тарифу
     const workedIncom = lessonsWorked?.reduce(
       (acum, lesson) => acum + (+lesson.price || 0),
       0,
     );
-    // прибуток за період
+
+    // Розраховуємо прибуток за період
     const profit = {
-      amount: income.amount - expense.amount + previousMonthProfit.amount,
+      amount: income.amount - expense.amount + previousPeriodProfit.amount,
       privatBank:
-        income.privatBank - expense.privatBank + previousMonthProfit.privatBank,
+        income.privatBank -
+        expense.privatBank +
+        previousPeriodProfit.privatBank,
       monoBank:
-        income.monoBank - expense.monoBank + previousMonthProfit.monoBank,
-      kasa: income.cash - expense.cash + previousMonthProfit.cash,
+        income.monoBank - expense.monoBank + previousPeriodProfit.monoBank,
+      kasa: income.cash - expense.cash + previousPeriodProfit.cash,
     };
 
-    return { income, workedIncom, expense, profit, previousMonthProfit };
+    return { income, workedIncom, expense, profit, previousPeriodProfit };
   }
 }

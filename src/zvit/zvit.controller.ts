@@ -40,11 +40,10 @@ export class ZvitController {
           .status(HttpStatus.NOT_FOUND)
           .json({ message: 'Виберіть дату або період!' });
       }
-      //   console.log('query', query);
 
-      const totalData = await this.zvitService.createZvitOneMonthTotal(query);
-
-      //   console.log('totalIncome', totalIncome);
+      const totalData = await this.zvitService.createZviForSelectedPeriod(
+        query,
+      );
 
       return res.status(HttpStatus.OK).json({ totalData });
     } catch (err) {
