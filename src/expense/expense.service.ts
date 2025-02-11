@@ -5,6 +5,7 @@ import { IExpense } from './interface/expense.interface';
 import { Model } from 'mongoose';
 import { Expense } from './expense.models';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
+import { GetExpenseByDateDto } from './dto/get-expense-date.dto';
 
 @Injectable()
 export class ExpenseService {
@@ -31,5 +32,19 @@ export class ExpenseService {
 
   async getExpenses() {
     return await this.expenseModule.find().exec();
+  }
+
+  async getExpenseById(id: string) {
+    return await this.expenseModule.findById({ _id: id });
+  }
+
+  async getExpenseByDate(dto: GetExpenseByDateDto) {
+    const startOfDay = new Date(dto.startDate);
+    const endOfDay = new Date(dto.endDate);
+
+    return await this.expenseModule
+      .find({ date: { $gte: startOfDay, $lte: endOfDay } })
+      .sort({ date: 1 })
+      .exec();
   }
 }
