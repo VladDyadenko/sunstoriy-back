@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -51,7 +52,7 @@ export class ExpenseController {
     }
   }
 
-  @Put('_id')
+  @Put(':id')
   @Roles(Role.Admin)
   async updateExpense(
     @Param('id') id: string,
@@ -153,6 +154,25 @@ export class ExpenseController {
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Patch('delete/:id')
+  @Roles(Role.Admin)
+  async deleteLesson(@Param('id') id: string, @Request() req, @Res() res) {
+    try {
+      const user = req.user;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const result = await this.expenseService.deleteExpenseById(id);
+      return res.status(HttpStatus.OK).json(result);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 401,
         message: err.message,
         error: 'Bad Request',
       });

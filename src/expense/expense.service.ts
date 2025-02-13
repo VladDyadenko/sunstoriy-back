@@ -42,9 +42,34 @@ export class ExpenseService {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
 
-    return await this.expenseModule
+    const expenses = await this.expenseModule
       .find({ date: { $gte: startOfDay, $lte: endOfDay } })
       .sort({ date: 1 })
       .exec();
+
+    const finalValues = expenses.reduce(
+      (acc, expense) => {
+        const sum = expense.amount;
+        if (expense.paymentForm === 'cash') {
+          acc.cash += sum;
+        } else if (expense.paymentForm === 'cashless') {
+          if (expense.bank === 'PrivatBank') {
+            acc.privatBank += sum;
+          } else if (expense.bank === 'MonoBank') {
+            acc.monoBank += sum;
+          }
+        }
+
+        acc.amount += sum;
+        return acc;
+      },
+      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
+    );
+    return { expenses, finalValues };
+  }
+
+  async deleteExpenseById(id: string) {
+    await this.expenseModule.deleteOne({ _id: id });
+    return `Successful delete`;
   }
 }
