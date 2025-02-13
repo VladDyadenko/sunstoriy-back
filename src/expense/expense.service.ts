@@ -47,25 +47,7 @@ export class ExpenseService {
       .sort({ date: 1 })
       .exec();
 
-    const finalValues = expenses.reduce(
-      (acc, expense) => {
-        const sum = expense.amount;
-        if (expense.paymentForm === 'cash') {
-          acc.cash += sum;
-        } else if (expense.paymentForm === 'cashless') {
-          if (expense.bank === 'PrivatBank') {
-            acc.privatBank += sum;
-          } else if (expense.bank === 'MonoBank') {
-            acc.monoBank += sum;
-          }
-        }
-
-        acc.amount += sum;
-        return acc;
-      },
-      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
-    );
-    return { expenses, finalValues };
+    return expenses;
   }
 
   async deleteExpenseById(id: string) {

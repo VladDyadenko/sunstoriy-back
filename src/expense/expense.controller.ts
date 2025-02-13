@@ -162,7 +162,7 @@ export class ExpenseController {
 
   @Patch('delete/:id')
   @Roles(Role.Admin)
-  async deleteLesson(@Param('id') id: string, @Request() req, @Res() res) {
+  async deleteExpense(@Param('id') id: string, @Request() req, @Res() res) {
     try {
       const user = req.user;
       if (!user) {
