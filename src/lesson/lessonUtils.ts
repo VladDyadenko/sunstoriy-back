@@ -5,6 +5,7 @@ import { ILesson } from './interface/lesson.interface';
 export async function checkLessonAvailability(
   lessonModule: Model<ILesson>,
   dto: Partial<CreateLessonDto>,
+  lessonId?: string,
 ) {
   if (!dto.dateLesson || !dto.timeLesson || !dto.office || !dto.teacher) {
     return {
@@ -17,12 +18,14 @@ export async function checkLessonAvailability(
     dateLesson: dto.dateLesson,
     timeLesson: dto.timeLesson,
     office: dto.office,
+    ...(lessonId ? { _id: { $ne: lessonId } } : {}), // Виключаємо цей урок при оновленні
   };
 
   const queryLessonTeacher = {
     dateLesson: dto.dateLesson,
     timeLesson: dto.timeLesson,
     teacher: dto.teacher,
+    ...(lessonId ? { _id: { $ne: lessonId } } : {}), // Виключаємо цей урок при оновленні
   };
 
   const checkLesson = await lessonModule.find(queryLessonOffice);

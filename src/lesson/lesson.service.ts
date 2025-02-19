@@ -11,13 +11,19 @@ import { ITeacher } from 'src/teacher/interface/teacher.interface';
 import { checkLessonAvailability } from './lessonUtils';
 import { GetLessonByOfficeAndDateDto } from './dto/get-lesson-office.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { Salary } from 'src/salary/salary.models';
+import { ISalary } from 'src/salary/interface/salary.interface';
+import { SalaryService } from 'src/salary/salary.service';
+import { AddSalaryOrder } from 'src/salary/dto/add-salary.dto';
 
 @Injectable()
 export class LessonService {
   constructor(
+    private readonly salaryService: SalaryService,
     @InjectModel(Lesson.name) private lessonModule: Model<ILesson>,
     @InjectModel(Child.name) private childModule: Model<IChild>,
     @InjectModel(Teacher.name) private teacherModule: Model<ITeacher>,
+    @InjectModel(Salary.name) private salaryModule: Model<ISalary>,
   ) {}
 
   async createLesson(dto: CreateLessonDto) {
@@ -52,6 +58,16 @@ export class LessonService {
   }
 
   async updateLesson(_id: string, dto: UpdateLessonDto) {
+    const availability = await checkLessonAvailability(
+      this.lessonModule,
+      dto,
+      _id,
+    );
+
+    if (!availability.isAvailable) {
+      throw new HttpException(availability.message, HttpStatus.BAD_REQUEST);
+    }
+
     const lesson = await this.lessonModule.findOneAndUpdate({ _id }, dto, {
       new: true,
       lean: true,
@@ -60,14 +76,75 @@ export class LessonService {
       throw new Error('Заняття не знайдено');
     }
 
-    lesson.childSurname = dto.childSurname || '';
-    lesson.plan = dto.plan || '';
-    lesson.review = dto.review || '';
-    lesson.teacherSurname = dto.teacherSurname || '';
-    lesson.mather = dto.mather || '';
-    lesson.matherPhone = dto.matherPhone || '';
+    if (!('isHappend' in lesson)) {
+      return;
+    }
 
-    await this.lessonModule.findByIdAndUpdate(_id, lesson);
+    // Видаляємо зайві пробіли
+    const isHappend = lesson.isHappend.trim();
+
+    // Знаходимо дані вчителя
+    const teacher = await this.teacherModule.findById({ _id: lesson.teacher });
+    if (!teacher) throw new Error('Вчителя не знайдено');
+
+    // Перевіряємо, чи вже є зарплатний запис за цю дату і вчителя
+    const isSalaryInThisDate = await this.salaryModule.findOne({
+      date: lesson.dateLesson,
+      teacherId: teacher._id,
+    });
+    if (!isSalaryInThisDate && isHappend === 'Відпрацьоване') {
+      // Створюємо запис, якщо його немає
+      await this.salaryService.addSalaryOrder({
+        teacherId: teacher._id,
+        name: teacher.name || '',
+        surname: teacher.surname || '',
+        date: lesson.dateLesson,
+        amount_accrued: teacher.salaryRate,
+        amount_debt: teacher.salaryRate,
+        lessonId: lesson._id,
+      });
+    } else if (isSalaryInThisDate) {
+      if (isHappend === 'Відпрацьоване') {
+        // Додаємо урок до зарплати
+        await this.salaryModule.updateOne(
+          {
+            teacherId: teacher._id,
+            date: lesson.dateLesson,
+            lessonId: { $nin: [lesson._id] },
+          },
+          {
+            $push: { lessonId: lesson._id },
+            $inc: {
+              amount_accrued: teacher.salaryRate,
+              amount_debt: teacher.salaryRate,
+            },
+          },
+          { new: true },
+        );
+      } else if (isHappend === 'Заплановане') {
+        // Видаляємо урок із зарплати
+        const salary = await this.salaryModule.findOneAndUpdate(
+          {
+            teacherId: teacher._id,
+            date: lesson.dateLesson,
+            lessonId: { $in: [lesson._id] },
+          },
+          {
+            $pull: { lessonId: lesson._id },
+            $inc: {
+              amount_accrued: -teacher.salaryRate,
+              amount_debt: -teacher.salaryRate,
+            },
+          },
+          { new: true },
+        );
+        // Якщо в зарплатному ордері не залишилось відпрацьованих уроків, його видаляють
+        if (salary && salary.lessonId && salary.lessonId.length === 0) {
+          await this.salaryModule.deleteOne({ _id: salary._id });
+        }
+      }
+    }
+
     return lesson;
   }
 

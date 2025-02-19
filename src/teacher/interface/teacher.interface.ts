@@ -9,4 +9,5 @@ export interface ITeacher extends Document {
   readonly color: string;
   readonly about: string;
   readonly specialization: string;
+  salaryRate?: number;
 }

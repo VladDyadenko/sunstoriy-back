@@ -32,6 +32,9 @@ export class Teacher {
   @Prop()
   specialization?: [string];
 
+  @Prop()
+  salaryRate?: number;
+
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'lessons' }])
   lesson: Lesson;
 }

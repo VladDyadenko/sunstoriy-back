@@ -3,7 +3,7 @@ export class CreateExpenseDto {
 
   category: string;
 
-  amount: number;
+  amount_accrued: number;
 
   paymentForm: string;
 
