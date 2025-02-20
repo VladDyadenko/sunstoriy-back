@@ -1,6 +1,8 @@
 export class CreateExpenseDto {
   date: Date;
 
+  salaryId?: string;
+
   category: string;
 
   amount_accrued: number;

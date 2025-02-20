@@ -87,6 +87,10 @@ export class LessonService {
     const teacher = await this.teacherModule.findById({ _id: lesson.teacher });
     if (!teacher) throw new Error('Вчителя не знайдено');
 
+    if (!teacher.salaryRate || teacher.salaryRate === 0) {
+      return lesson;
+    }
+
     // Перевіряємо, чи вже є зарплатний запис за цю дату і вчителя
     const isSalaryInThisDate = await this.salaryModule.findOne({
       date: lesson.dateLesson,

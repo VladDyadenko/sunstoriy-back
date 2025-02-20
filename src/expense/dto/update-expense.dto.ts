@@ -4,6 +4,8 @@ import { CreateExpenseDto } from './create-expense.dto';
 export class UpdateExpenseDto extends PartialType(CreateExpenseDto) {
   date: Date;
 
+  salaryId?: string;
+
   category: string;
 
   amount: number;

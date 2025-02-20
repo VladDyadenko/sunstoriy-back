@@ -137,7 +137,7 @@ export class SalaryController {
       return res.status(HttpStatus.OK).json(result);
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({
-        statusCode: 401,
+        statusCode: 400,
         message: err.message,
         error: 'Bad Request',
       });
