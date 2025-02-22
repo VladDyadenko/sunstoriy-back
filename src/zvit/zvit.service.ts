@@ -15,6 +15,10 @@ import { CreateChildPerioZvitDto } from './dto/create-children-period.dto';
 
 @Injectable()
 export class ZvitService {
+  //Створюємо кешування по дітям, щоб не звертатись постійно до БД
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private childCache = new Map<string, any>();
+
   constructor(
     @InjectModel(Lesson.name) private lessonModule: Model<ILesson>,
     @InjectModel(Child.name) private childModule: Model<IChild>,
@@ -176,6 +180,19 @@ export class ZvitService {
     return { income, workedIncom, expense, profit, previousPeriodProfit };
   }
 
+  //Кешування даних про дітей
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async getChildInfo(childId: string): Promise<any> {
+    if (this.childCache.has(childId)) {
+      return this.childCache.get(childId);
+    }
+
+    const child = await this.childModule.findById(childId).exec();
+    this.childCache.set(childId, child);
+    return child;
+  }
+
   async createReportChildrens(dto: CreateOneMonthTotalZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
@@ -191,13 +208,16 @@ export class ZvitService {
     // Групуємо уроки по дитині
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const childrenMap = new Map<string, any>();
-    lessons.forEach((lesson) => {
+    // Обробка уроків
+    for (const lesson of lessons) {
       const child = lesson.child.toString();
+      const childInfo = await this.getChildInfo(child);
+
       if (!childrenMap.has(child)) {
         childrenMap.set(child, {
           child: lesson.child,
-          childName: lesson.childName,
-          childSurname: lesson.childSurname,
+          childName: childInfo.name,
+          childSurname: childInfo.surname,
           start: { price: 0, sum: 0, balance: 0 },
           period: { price: 0, sum: 0, balance: 0 },
           end: { balance: 0 },
@@ -208,7 +228,7 @@ export class ZvitService {
       childData.period.price += lesson.price || 0;
       childData.period.sum += lesson.sum || 0;
       childData.period.balance = childData.period.sum - childData.period.price;
-    });
+    }
 
     // Отримуємо дані на початок періоду
     const startOfCurrentYear = startOfYear(startOfDay);
