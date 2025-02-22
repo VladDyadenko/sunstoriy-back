@@ -11,6 +11,7 @@ import { ITeacher } from 'src/teacher/interface/teacher.interface';
 import { Teacher } from 'src/teacher/teacher.models';
 import { CreateOneMonthTotalZvitDto } from './dto/create-oneMonse-zvit.dto';
 import { startOfYear, subDays } from 'date-fns';
+import { CreateChildPerioZvitDto } from './dto/create-children-period.dto';
 
 @Injectable()
 export class ZvitService {
@@ -173,5 +174,104 @@ export class ZvitService {
     };
 
     return { income, workedIncom, expense, profit, previousPeriodProfit };
+  }
+
+  async createReportChildrens(dto: CreateOneMonthTotalZvitDto) {
+    const startOfDay = new Date(dto.startDate);
+    const endOfDay = new Date(dto.endDate);
+
+    // Отримуємо всі уроки за вказаний період зі статусом "Відпрацьовано"
+    const lessons = await this.lessonModule
+      .find({
+        dateLesson: { $gte: startOfDay, $lte: endOfDay },
+        isHappend: 'Відпрацьоване',
+      })
+      .exec();
+
+    // Групуємо уроки по дитині
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const childrenMap = new Map<string, any>();
+    lessons.forEach((lesson) => {
+      const child = lesson.child.toString();
+      if (!childrenMap.has(child)) {
+        childrenMap.set(child, {
+          child: lesson.child,
+          childName: lesson.childName,
+          childSurname: lesson.childSurname,
+          start: { price: 0, sum: 0, balance: 0 },
+          period: { price: 0, sum: 0, balance: 0 },
+          end: { balance: 0 },
+        });
+      }
+
+      const childData = childrenMap.get(child);
+      childData.period.price += lesson.price || 0;
+      childData.period.sum += lesson.sum || 0;
+      childData.period.balance = childData.period.sum - childData.period.price;
+    });
+
+    // Отримуємо дані на початок періоду
+    const startOfCurrentYear = startOfYear(startOfDay);
+    const endOfPreviousPeriod = subDays(startOfDay, 1);
+
+    const previousPeriodLessons = await this.lessonModule
+      .find({
+        dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
+        isHappend: 'Відпрацьоване',
+      })
+      .exec();
+
+    previousPeriodLessons.forEach((lesson) => {
+      const child = lesson.child.toString();
+      if (childrenMap.has(child)) {
+        const childData = childrenMap.get(child);
+        childData.start.price += lesson.price || 0;
+        childData.start.sum += lesson.sum || 0;
+        childData.start.balance = childData.start.sum - childData.start.price;
+      }
+    });
+
+    // Розраховуємо баланс на кінець періоду
+    childrenMap.forEach((childData) => {
+      childData.end.balance =
+        childData.start.balance + childData.period.balance;
+    });
+
+    // Повертаємо результат у вигляді масиву
+    return Array.from(childrenMap.values());
+  }
+
+  async getChildDetailReport(_id: string, dto: CreateChildPerioZvitDto) {
+    const startOfDay = new Date(dto.startDate);
+    const endOfDay = new Date(dto.endDate);
+
+    const lessons = await this.lessonModule
+      .find({
+        child: _id,
+        dateLesson: { $gte: startOfDay, $lte: endOfDay },
+        isHappend: 'Відпрацьоване',
+      })
+      .exec();
+
+    let totalBalance = 0;
+    const details = lessons.map((lesson) => {
+      const balance = (lesson.sum || 0) - (lesson.price || 0);
+      totalBalance += balance;
+      return {
+        dateLesson: lesson.dateLesson,
+        office: lesson.office,
+        price: lesson.price || 0,
+        sum: lesson.sum || 0,
+        balance,
+      };
+    });
+
+    return {
+      childName: lessons[0]?.childName || '',
+      childSurname: lessons[0]?.childSurname || '',
+      child: _id,
+      totalBalance,
+      details,
+    };
   }
 }
