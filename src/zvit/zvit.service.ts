@@ -212,12 +212,11 @@ export class ZvitService {
     for (const lesson of lessons) {
       const child = lesson.child.toString();
       const childInfo = await this.getChildInfo(child);
-
       if (!childrenMap.has(child)) {
         childrenMap.set(child, {
           child: lesson.child,
           childName: childInfo.name,
-          childSurname: childInfo.surname,
+          childSurname: childInfo.surname ? childInfo.surname : '',
           start: { price: 0, sum: 0, balance: 0 },
           period: { price: 0, sum: 0, balance: 0 },
           end: { balance: 0 },
@@ -261,18 +260,17 @@ export class ZvitService {
     return Array.from(childrenMap.values());
   }
 
-  async getChildDetailReport(_id: string, dto: CreateChildPerioZvitDto) {
+  async getChildDetailReport(id: string, dto: CreateChildPerioZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
 
     const lessons = await this.lessonModule
       .find({
-        child: _id,
+        child: id,
         dateLesson: { $gte: startOfDay, $lte: endOfDay },
         isHappend: 'Відпрацьоване',
       })
       .exec();
-
     let totalBalance = 0;
     const details = lessons.map((lesson) => {
       const balance = (lesson.sum || 0) - (lesson.price || 0);
@@ -289,7 +287,7 @@ export class ZvitService {
     return {
       childName: lessons[0]?.childName || '',
       childSurname: lessons[0]?.childSurname || '',
-      child: _id,
+      child: id,
       totalBalance,
       details,
     };

@@ -96,7 +96,7 @@ export class ZvitController {
     @Request() req,
     @Res() res,
     @Param('id') id: string,
-    @Query() query: CreateChildPerioZvitDto,
+    @Query() dto: CreateChildPerioZvitDto,
   ) {
     try {
       const user = req.user;
@@ -107,13 +107,13 @@ export class ZvitController {
         });
       }
 
-      if (!query.startDate || !query.endDate) {
+      if (!dto.startDate || !dto.endDate) {
         return res
           .status(HttpStatus.NOT_FOUND)
           .json({ message: 'Виберіть дату або період!' });
       }
 
-      const totalData = await this.zvitService.getChildDetailReport(id, query);
+      const totalData = await this.zvitService.getChildDetailReport(id, dto);
 
       return res.status(HttpStatus.OK).json({ totalData });
     } catch (err) {
