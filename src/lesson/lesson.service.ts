@@ -58,20 +58,42 @@ export class LessonService {
   }
 
   async updateLesson(_id: string, dto: UpdateLessonDto) {
-    const availability = await checkLessonAvailability(
-      this.lessonModule,
-      dto,
-      _id,
-    );
+    const isOnlySum =
+      Object.keys(dto).length === 3 &&
+      'sum' in dto &&
+      'bank' in dto &&
+      'paymentForm' in dto;
 
-    if (!availability.isAvailable) {
-      throw new HttpException(availability.message, HttpStatus.BAD_REQUEST);
+    if (!isOnlySum) {
+      const availability = await checkLessonAvailability(
+        this.lessonModule,
+        dto,
+        _id,
+      );
+
+      if (!availability.isAvailable) {
+        throw new HttpException(availability.message, HttpStatus.BAD_REQUEST);
+      }
     }
 
+    // Отримуємо поточний урок перед оновленням
+    const existingLesson = await this.lessonModule.findById(_id);
+    if (!existingLesson) {
+      throw new Error('Заняття не знайдено');
+    }
+
+    if ('sum' in dto) {
+      const currentSum = existingLesson.sum || 0;
+      if (currentSum !== 0) {
+        dto.sum = currentSum + dto.sum;
+      }
+    }
+    // Оновлюємо урок
     const lesson = await this.lessonModule.findOneAndUpdate({ _id }, dto, {
       new: true,
       lean: true,
     });
+
     if (!lesson) {
       throw new Error('Заняття не знайдено');
     }

@@ -256,8 +256,15 @@ export class ZvitService {
         childData.start.balance + childData.period.balance;
     });
 
-    // Повертаємо результат у вигляді масиву
-    return Array.from(childrenMap.values());
+    // Перетворюємо Map в масив і сортуємо за іменем дитини (childName)
+    const sortedChildren = Array.from(childrenMap.values()).sort((a, b) => {
+      if (a.childName < b.childName) return -1;
+      if (a.childName > b.childName) return 1;
+      return 0;
+    });
+
+    // Повертаємо відсортований результат
+    return sortedChildren;
   }
 
   async getChildDetailReport(id: string, dto: CreateChildPerioZvitDto) {
@@ -270,6 +277,7 @@ export class ZvitService {
         dateLesson: { $gte: startOfDay, $lte: endOfDay },
         isHappend: 'Відпрацьоване',
       })
+      .sort({ dateLesson: 1 })
       .exec();
     let totalBalance = 0;
     const details = lessons.map((lesson) => {
@@ -277,6 +285,7 @@ export class ZvitService {
       totalBalance += balance;
       return {
         dateLesson: lesson.dateLesson,
+        lessonId: lesson._id,
         office: lesson.office,
         price: lesson.price || 0,
         sum: lesson.sum || 0,
@@ -284,11 +293,29 @@ export class ZvitService {
       };
     });
 
+    const startOfCurrentYear = startOfYear(startOfDay);
+    const endOfPreviousPeriod = subDays(startOfDay, 1);
+
+    const previousPeriodLessons = await this.lessonModule
+      .find({
+        child: id,
+        dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
+        isHappend: 'Відпрацьоване',
+      })
+      .exec();
+    let totalPreviousBalance = 0;
+    const previousBalance = previousPeriodLessons.map((lesson) => {
+      const balance = (lesson.sum || 0) - (lesson.price || 0);
+      totalPreviousBalance += balance;
+      return totalPreviousBalance;
+    });
+
     return {
       childName: lessons[0]?.childName || '',
       childSurname: lessons[0]?.childSurname || '',
       child: id,
       totalBalance,
+      totalPreviousBalance,
       details,
     };
   }

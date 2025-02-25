@@ -19,4 +19,6 @@ export class UpdateLessonDto extends PartialType(CreateLessonDto) {
   teacherColor?: string;
   isSendSms?: boolean;
   status?: string;
+  paymentForm?: string;
+  sum: number;
 }
