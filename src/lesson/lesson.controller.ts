@@ -13,6 +13,7 @@ import {
   Put,
   Patch,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
@@ -21,11 +22,78 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'src/roles/role.enum';
+import { AddPaymentDto } from './dto/add-payment.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 
 @Controller('/lesson')
 @UseGuards(RolesGuard)
 export class LessonController {
   constructor(private lessonService: LessonService) {}
+
+  @Post(':lessonId/payment')
+  @Roles(Role.Admin, Role.Teacher)
+  async addPayment(
+    @Param('lessonId') lessonId: string,
+    @Body() dto: AddPaymentDto,
+    @Res() res,
+  ) {
+    try {
+      const lesson = await this.lessonService.addPayment(lessonId, dto);
+      return res.status(HttpStatus.CREATED).json(lesson);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Patch(':lessonId/payment/:paymentId')
+  @Roles(Role.Admin, Role.Teacher)
+  async updatePayment(
+    @Param('lessonId') lessonId: string,
+    @Param('paymentId') paymentId: string,
+    @Body() dto: UpdatePaymentDto,
+    @Res() res,
+  ) {
+    try {
+      const lesson = await this.lessonService.updatePayment(
+        lessonId,
+        paymentId,
+        dto,
+      );
+      return res.status(HttpStatus.OK).json(lesson);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Delete(':lessonId/payment/:paymentId')
+  @Roles(Role.Admin, Role.Teacher)
+  async deletePayment(
+    @Param('lessonId') lessonId: string,
+    @Param('paymentId') paymentId: string,
+    @Res() res,
+  ) {
+    try {
+      const lesson = await this.lessonService.deletePayment(
+        lessonId,
+        paymentId,
+      );
+      return res.status(HttpStatus.OK).json(lesson);
+    } catch (err) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
 
   @Post()
   @Roles(Role.Admin, Role.Teacher)
@@ -89,7 +157,7 @@ export class LessonController {
   }
 
   @Get()
-  @Roles(Role.Admin, Role.Teacher, Role.User)
+  @Roles(Role.Admin, Role.Teacher)
   async getAll(@Request() req) {
     const user = req.user;
 
@@ -106,7 +174,7 @@ export class LessonController {
     return lessons;
   }
   @Get('/lesson/:id')
-  @Roles(Role.Admin, Role.Teacher, Role.User)
+  @Roles(Role.Admin, Role.Teacher)
   async getLessonById(@Request() req, @Param('id') id: string, @Res() res) {
     try {
       const user = req.user;
@@ -134,7 +202,7 @@ export class LessonController {
   }
 
   @Get('/office/office_date')
-  @Roles(Role.Admin, Role.Teacher, Role.User)
+  @Roles(Role.Admin, Role.Teacher)
   async getLessonByOffice(
     @Request() req,
     @Res() res,

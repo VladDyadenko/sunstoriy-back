@@ -1,33 +1,40 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import * as mongoose from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 
-import { Document } from 'mongoose';
+export type LessonDocument = Lesson & Document;
 
-export type TeacherDocument = Lesson & Document;
+@Schema()
+class Payment {
+  @Prop({ type: Date, required: true })
+  date?: Date;
+
+  @Prop({ type: Number, required: true })
+  amount?: number;
+
+  @Prop({ type: String, required: true })
+  paymentForm?: string;
+
+  @Prop({ type: String })
+  bank?: string;
+}
+
+const PaymentSchema = SchemaFactory.createForClass(Payment);
 
 @Schema({ versionKey: false, timestamps: false })
 export class Lesson {
   @Prop({ required: true })
   office: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'child', required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'child', required: true })
   child: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'teacher',
-    required: true,
-  })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'teacher', required: true })
   teacher: string;
 
-  @Prop({
-    required: true,
-  })
+  @Prop({ required: true })
   dateLesson: Date;
 
-  @Prop({
-    required: true,
-  })
+  @Prop({ required: true })
   timeLesson: Date[];
 
   @Prop()
@@ -67,16 +74,11 @@ export class Lesson {
   status: string;
 
   @Prop()
-  paymentForm: string;
-
-  @Prop()
-  bank: string;
-
-  @Prop()
   isHappend: string;
 
-  @Prop()
-  sum: number;
+  // Використовуємо масив підсхем
+  @Prop({ type: [PaymentSchema], default: [] })
+  sum: Payment[];
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);

@@ -1,5 +1,13 @@
 import { Document } from 'mongoose';
 
+export interface IPayment {
+  _id?: string;
+  date?: Date;
+  amount?: number;
+  paymentForm?: string;
+  bank?: string;
+}
+
 export interface ILesson extends Document {
   office: string;
 
@@ -35,11 +43,7 @@ export interface ILesson extends Document {
 
   status?: string;
 
-  paymentForm?: string;
-
-  bank?: string;
-
   isHappend?: string;
 
-  sum?: number;
+  sum?: IPayment[];
 }

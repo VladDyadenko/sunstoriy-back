@@ -7,8 +7,6 @@ import { Expense } from 'src/expense/expense.models';
 import { IExpense } from 'src/expense/interface/expense.interface';
 import { ILesson } from 'src/lesson/interface/lesson.interface';
 import { Lesson } from 'src/lesson/lesson.models';
-import { ITeacher } from 'src/teacher/interface/teacher.interface';
-import { Teacher } from 'src/teacher/teacher.models';
 import { CreateOneMonthTotalZvitDto } from './dto/create-oneMonse-zvit.dto';
 import { startOfYear, subDays } from 'date-fns';
 import { CreateChildPerioZvitDto } from './dto/create-children-period.dto';
@@ -22,165 +20,107 @@ export class ZvitService {
   constructor(
     @InjectModel(Lesson.name) private lessonModule: Model<ILesson>,
     @InjectModel(Child.name) private childModule: Model<IChild>,
-    @InjectModel(Teacher.name) private teacherModule: Model<ITeacher>,
     @InjectModel(Expense.name) private expenseModule: Model<IExpense>,
   ) {}
 
   async createZviForSelectedPeriod(dto: CreateOneMonthTotalZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
-
-    // Отримуємо початок поточного року
     const startOfCurrentYear = startOfYear(startOfDay);
-
-    // Отримуємо кінець попереднього дня (перед startOfDay)
     const endOfPreviousPeriod = subDays(startOfDay, 1);
 
-    // Отримуємо дані від початку року до кінця попереднього дня
-    const previousPeriodLessons = await this.lessonModule
+    const previousLessons = await this.lessonModule
       .find({
         dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
       })
       .exec();
 
-    const previousPeriodExpenses = await this.expenseModule
-      .find({
-        date: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
-      })
+    const previousExpenses = await this.expenseModule
+      .find({ date: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod } })
       .exec();
 
-    // Розраховуємо прибуток і витрати за попередній період
-    const previousPeriodIncome = previousPeriodLessons?.reduce(
-      (acc, lesson) => {
-        const sum = lesson.sum || 0;
-
-        if (lesson.paymentForm === 'cash') {
-          acc.cash += sum;
-        } else if (lesson.paymentForm === 'cashless') {
-          if (lesson.bank === 'PrivatBank') {
-            acc.privatBank += sum;
-          } else if (lesson.bank === 'MonoBank') {
-            acc.monoBank += sum;
-          }
-        }
-
-        acc.amount += sum;
-        return acc;
-      },
-      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
-    );
-
-    const previousPeriodExpense = previousPeriodExpenses?.reduce(
-      (acc, expense) => {
-        const amount = expense.amount || 0;
-
-        if (expense.paymentForm === 'cash') {
-          acc.cash += amount;
-        } else if (expense.paymentForm === 'cashless') {
-          if (expense.bank === 'PrivatBank') {
-            acc.privatBank += amount;
-          } else if (expense.bank === 'MonoBank') {
-            acc.monoBank += amount;
-          }
-        }
-
-        acc.amount += amount;
-        return acc;
-      },
-      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
-    );
+    const previousIncome = this.calculateIncome(previousLessons);
+    const previousExpense = this.calculateExpenses(previousExpenses);
 
     const previousPeriodProfit = {
-      amount: previousPeriodIncome.amount - previousPeriodExpense.amount,
-      privatBank:
-        previousPeriodIncome.privatBank - previousPeriodExpense.privatBank,
-      monoBank: previousPeriodIncome.monoBank - previousPeriodExpense.monoBank,
-      cash: previousPeriodIncome.cash - previousPeriodExpense.cash,
+      amount: previousIncome.amount - previousExpense.amount,
+      cash: previousIncome.cash - previousExpense.cash,
+      privatBank: previousIncome.privatBank - previousExpense.privatBank,
+      monoBank: previousIncome.monoBank - previousExpense.monoBank,
     };
 
-    // Отримуємо уроки за заданий період
     const lessonsPeriod = await this.lessonModule
-      .find({
-        dateLesson: { $gte: startOfDay, $lte: endOfDay },
-      })
+      .find({ dateLesson: { $gte: startOfDay, $lte: endOfDay } })
       .exec();
 
-    // Отримуємо розходи за заданий період
     const expensesPeriod = await this.expenseModule
-      .find({
-        date: { $gte: startOfDay, $lte: endOfDay },
-      })
+      .find({ date: { $gte: startOfDay, $lte: endOfDay } })
       .exec();
 
-    // Отримуємо уроки зі статусом "Відпрацьоване"
-    const lessonsWorked = lessonsPeriod?.filter((lesson) => {
-      return lesson.isHappend === 'Відпрацьоване';
-    });
+    const income = this.calculateIncome(lessonsPeriod);
+    const expense = this.calculateExpenses(expensesPeriod);
 
-    // Розраховуємо всі розходи за період
-    const expense = expensesPeriod?.reduce(
-      (acc, expense) => {
-        const amount = expense.amount || 0;
-
-        if (expense.paymentForm === 'cash') {
-          acc.cash += amount;
-        } else if (expense.paymentForm === 'cashless') {
-          if (expense.bank === 'PrivatBank') {
-            acc.privatBank += amount;
-          } else if (expense.bank === 'MonoBank') {
-            acc.monoBank += amount;
-          }
-        }
-
-        acc.amount += amount;
-        return acc;
-      },
-      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
+    const workedLessons = lessonsPeriod.filter(
+      (lesson) => lesson.isHappend === 'Відпрацьоване',
     );
-
-    // Розраховуємо всі кошти, отримані за період
-    const income = lessonsPeriod?.reduce(
-      (acc, lesson) => {
-        const sum = lesson.sum || 0;
-
-        if (lesson.paymentForm === 'cash') {
-          acc.cash += sum;
-        } else if (lesson.paymentForm === 'cashless') {
-          if (lesson.bank === 'PrivatBank') {
-            acc.privatBank += sum;
-          } else if (lesson.bank === 'MonoBank') {
-            acc.monoBank += sum;
-          }
-        }
-
-        acc.amount += sum;
-        return acc;
-      },
-      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
-    );
-
-    // Розраховуємо кошти за відпрацьовані уроки по тарифу
-    const workedIncom = lessonsWorked?.reduce(
-      (acum, lesson) => acum + (+lesson.price || 0),
+    const workedIncom = workedLessons.reduce(
+      (acc, lesson) => acc + (lesson.price || 0),
       0,
     );
 
-    // Розраховуємо прибуток за період
     const profit = {
       amount: income.amount - expense.amount + previousPeriodProfit.amount,
+      cash: income.cash - expense.cash + previousPeriodProfit.cash,
       privatBank:
         income.privatBank -
         expense.privatBank +
         previousPeriodProfit.privatBank,
       monoBank:
         income.monoBank - expense.monoBank + previousPeriodProfit.monoBank,
-      kasa: income.cash - expense.cash + previousPeriodProfit.cash,
     };
 
     return { income, workedIncom, expense, profit, previousPeriodProfit };
   }
 
-  //Кешування даних про дітей
+  private calculateIncome(lessons: ILesson[]) {
+    return lessons.reduce(
+      (acc, lesson) => {
+        lesson.sum.forEach((payment) => {
+          acc.amount += payment.amount;
+          if (payment.paymentForm === 'cash') {
+            acc.cash += payment.amount;
+          } else if (payment.paymentForm === 'cashless') {
+            if (payment.bank === 'PrivatBank') {
+              acc.privatBank += payment.amount;
+            } else if (payment.bank === 'MonoBank') {
+              acc.monoBank += payment.amount;
+            }
+          }
+        });
+        return acc;
+      },
+      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
+    );
+  }
+
+  private calculateExpenses(expenses: IExpense[]) {
+    return expenses.reduce(
+      (acc, expense) => {
+        acc.amount += expense.amount;
+        if (expense.paymentForm === 'cash') {
+          acc.cash += expense.amount;
+        } else if (expense.paymentForm === 'cashless') {
+          if (expense.bank === 'PrivatBank') {
+            acc.privatBank += expense.amount;
+          } else if (expense.bank === 'MonoBank') {
+            acc.monoBank += expense.amount;
+          }
+        }
+        return acc;
+      },
+      { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },
+    );
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getChildInfo(childId: string): Promise<any> {
@@ -196,8 +136,10 @@ export class ZvitService {
   async createReportChildrens(dto: CreateOneMonthTotalZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
+    const startOfCurrentYear = startOfYear(startOfDay);
+    const endOfPreviousPeriod = subDays(startOfDay, 1);
 
-    // Отримуємо всі уроки за вказаний період зі статусом "Відпрацьовано"
+    // Отримуємо всі уроки за період
     const lessons = await this.lessonModule
       .find({
         dateLesson: { $gte: startOfDay, $lte: endOfDay },
@@ -208,62 +150,63 @@ export class ZvitService {
     // Групуємо уроки по дитині
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const childrenMap = new Map<string, any>();
-    // Обробка уроків
+
     for (const lesson of lessons) {
-      const child = lesson.child.toString();
-      const childInfo = await this.getChildInfo(child);
-      if (!childrenMap.has(child)) {
-        childrenMap.set(child, {
-          child: lesson.child,
+      const childId = lesson.child.toString();
+      const childInfo = await this.getChildInfo(childId);
+
+      if (!childrenMap.has(childId)) {
+        childrenMap.set(childId, {
+          child: childId,
           childName: childInfo.name,
-          childSurname: childInfo.surname ? childInfo.surname : '',
+          childSurname: childInfo.surname || '',
           start: { price: 0, sum: 0, balance: 0 },
           period: { price: 0, sum: 0, balance: 0 },
           end: { balance: 0 },
         });
       }
 
-      const childData = childrenMap.get(child);
+      const childData = childrenMap.get(childId);
+      const totalSum =
+        lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
+
       childData.period.price += lesson.price || 0;
-      childData.period.sum += lesson.sum || 0;
+      childData.period.sum += totalSum;
       childData.period.balance = childData.period.sum - childData.period.price;
     }
 
-    // Отримуємо дані на початок періоду
-    const startOfCurrentYear = startOfYear(startOfDay);
-    const endOfPreviousPeriod = subDays(startOfDay, 1);
-
-    const previousPeriodLessons = await this.lessonModule
+    // Отримуємо уроки за попередній період (з початку року)
+    const previousLessons = await this.lessonModule
       .find({
         dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
         isHappend: 'Відпрацьоване',
       })
       .exec();
 
-    previousPeriodLessons.forEach((lesson) => {
-      const child = lesson.child.toString();
-      if (childrenMap.has(child)) {
-        const childData = childrenMap.get(child);
+    previousLessons.forEach((lesson) => {
+      const childId = lesson.child.toString();
+      if (childrenMap.has(childId)) {
+        const childData = childrenMap.get(childId);
+        const totalSum =
+          lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
+
         childData.start.price += lesson.price || 0;
-        childData.start.sum += lesson.sum || 0;
+        childData.start.sum += totalSum;
         childData.start.balance = childData.start.sum - childData.start.price;
       }
     });
 
-    // Розраховуємо баланс на кінець періоду
+    // Розраховуємо кінцевий баланс
     childrenMap.forEach((childData) => {
       childData.end.balance =
         childData.start.balance + childData.period.balance;
     });
 
-    // Перетворюємо Map в масив і сортуємо за іменем дитини (childName)
-    const sortedChildren = Array.from(childrenMap.values()).sort((a, b) => {
-      if (a.childName < b.childName) return -1;
-      if (a.childName > b.childName) return 1;
-      return 0;
-    });
+    // Перетворюємо Map у масив і сортуємо за ім’ям дитини
+    const sortedChildren = Array.from(childrenMap.values()).sort((a, b) =>
+      a.childName.localeCompare(b.childName),
+    );
 
-    // Повертаємо відсортований результат
     return sortedChildren;
   }
 
@@ -271,6 +214,7 @@ export class ZvitService {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
 
+    // Отримуємо всі уроки за вказаний період зі статусом "Відпрацьоване"
     const lessons = await this.lessonModule
       .find({
         child: id,
@@ -279,16 +223,21 @@ export class ZvitService {
       })
       .sort({ dateLesson: 1 })
       .exec();
+
     let totalBalance = 0;
     const details = lessons.map((lesson) => {
-      const balance = (lesson.sum || 0) - (lesson.price || 0);
+      // Підраховуємо всі платежі за урок
+      const totalSum =
+        lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
+      const balance = totalSum - (lesson.price || 0);
       totalBalance += balance;
+
       return {
         dateLesson: lesson.dateLesson,
         lessonId: lesson._id,
         office: lesson.office,
         price: lesson.price || 0,
-        sum: lesson.sum || 0,
+        sum: totalSum, // Загальна оплачена сума за урок
         balance,
       };
     });
@@ -296,6 +245,7 @@ export class ZvitService {
     const startOfCurrentYear = startOfYear(startOfDay);
     const endOfPreviousPeriod = subDays(startOfDay, 1);
 
+    // Отримуємо всі уроки до початку періоду (щоб порахувати початковий баланс)
     const previousPeriodLessons = await this.lessonModule
       .find({
         child: id,
@@ -303,11 +253,12 @@ export class ZvitService {
         isHappend: 'Відпрацьоване',
       })
       .exec();
+
     let totalPreviousBalance = 0;
-    const previousBalance = previousPeriodLessons.map((lesson) => {
-      const balance = (lesson.sum || 0) - (lesson.price || 0);
-      totalPreviousBalance += balance;
-      return totalPreviousBalance;
+    previousPeriodLessons.forEach((lesson) => {
+      const totalSum =
+        lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
+      totalPreviousBalance += totalSum - (lesson.price || 0);
     });
 
     return {

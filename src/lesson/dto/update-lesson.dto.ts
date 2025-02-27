@@ -1,8 +1,15 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateLessonDto } from './create-lesson.dto';
 
+class PaymentDto {
+  date?: Date;
+  amount?: number;
+  paymentForm?: string;
+  bank?: string;
+}
+
 export class UpdateLessonDto extends PartialType(CreateLessonDto) {
-  office: string;
+  office?: string;
   child?: string;
   teacher?: string;
   price?: number;
@@ -19,6 +26,5 @@ export class UpdateLessonDto extends PartialType(CreateLessonDto) {
   teacherColor?: string;
   isSendSms?: boolean;
   status?: string;
-  paymentForm?: string;
-  sum: number;
+  sum?: PaymentDto[];
 }

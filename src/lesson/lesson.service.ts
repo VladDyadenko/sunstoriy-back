@@ -14,7 +14,8 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { Salary } from 'src/salary/salary.models';
 import { ISalary } from 'src/salary/interface/salary.interface';
 import { SalaryService } from 'src/salary/salary.service';
-import { AddSalaryOrder } from 'src/salary/dto/add-salary.dto';
+import { AddPaymentDto } from './dto/add-payment.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 
 @Injectable()
 export class LessonService {
@@ -58,22 +59,14 @@ export class LessonService {
   }
 
   async updateLesson(_id: string, dto: UpdateLessonDto) {
-    const isOnlySum =
-      Object.keys(dto).length === 3 &&
-      'sum' in dto &&
-      'bank' in dto &&
-      'paymentForm' in dto;
+    const availability = await checkLessonAvailability(
+      this.lessonModule,
+      dto,
+      _id,
+    );
 
-    if (!isOnlySum) {
-      const availability = await checkLessonAvailability(
-        this.lessonModule,
-        dto,
-        _id,
-      );
-
-      if (!availability.isAvailable) {
-        throw new HttpException(availability.message, HttpStatus.BAD_REQUEST);
-      }
+    if (!availability.isAvailable) {
+      throw new HttpException(availability.message, HttpStatus.BAD_REQUEST);
     }
 
     // Отримуємо поточний урок перед оновленням
@@ -82,12 +75,12 @@ export class LessonService {
       throw new Error('Заняття не знайдено');
     }
 
-    if ('sum' in dto) {
-      const currentSum = existingLesson.sum || 0;
-      if (currentSum !== 0) {
-        dto.sum = currentSum + dto.sum;
-      }
+    // Обробка платежів (sum)
+    if ('sum' in dto && Array.isArray(dto.sum)) {
+      // Додаємо нові платежі до поточного масиву
+      dto.sum = [...(existingLesson.sum || []), ...dto.sum];
     }
+
     // Оновлюємо урок
     const lesson = await this.lessonModule.findOneAndUpdate({ _id }, dto, {
       new: true,
@@ -118,6 +111,7 @@ export class LessonService {
       date: lesson.dateLesson,
       teacherId: teacher._id,
     });
+
     if (!isSalaryInThisDate && isHappend === 'Відпрацьоване') {
       // Створюємо запис, якщо його немає
       await this.salaryService.addSalaryOrder({
@@ -164,6 +158,7 @@ export class LessonService {
           },
           { new: true },
         );
+
         // Якщо в зарплатному ордері не залишилось відпрацьованих уроків, його видаляють
         if (salary && salary.lessonId && salary.lessonId.length === 0) {
           await this.salaryModule.deleteOne({ _id: salary._id });
@@ -231,5 +226,94 @@ export class LessonService {
 
     await this.lessonModule.deleteOne({ _id: id });
     return `Successful delete`;
+  }
+
+  //  Сервіси роботи з платежами
+
+  async addPayment(lessonId: string, dto: AddPaymentDto) {
+    const lesson = await this.lessonModule.findById(lessonId);
+    if (!lesson) {
+      throw new HttpException('Заняття не знайдено', HttpStatus.NOT_FOUND);
+    }
+
+    const { isHappend, ...paymentData } = dto;
+    if (isHappend !== undefined) {
+      lesson.isHappend = isHappend;
+    }
+
+    if (paymentData.paymentForm === 'noPayment') {
+      await lesson.save();
+      return lesson;
+    }
+
+    if (!lesson.sum || lesson.sum.length === 0) {
+      lesson.sum = [paymentData];
+      await lesson.save();
+      return lesson;
+    }
+
+    const existingPayment = lesson.sum.find((p) => {
+      const dtoDate = new Date(paymentData.date);
+      return (
+        p.date.getTime() === dtoDate.getTime() &&
+        p.paymentForm === paymentData.paymentForm &&
+        p.bank === paymentData.bank
+      );
+    });
+
+    if (existingPayment) {
+      existingPayment.amount += paymentData.amount;
+    } else {
+      lesson.sum.push(paymentData);
+    }
+
+    await lesson.save();
+    return lesson;
+  }
+
+  async updatePayment(
+    lessonId: string,
+    paymentId: string,
+    dto: UpdatePaymentDto,
+  ) {
+    const lesson = await this.lessonModule.findById(lessonId);
+    if (!lesson) {
+      throw new HttpException('Заняття не знайдено', HttpStatus.NOT_FOUND);
+    }
+    const { isHappend, ...paymentData } = dto;
+
+    if (isHappend !== undefined) {
+      lesson.isHappend = isHappend;
+    }
+
+    const paymentIndex = lesson.sum.findIndex(
+      (p) => p._id.toString() === paymentId,
+    );
+    if (paymentIndex === -1) {
+      await lesson.save();
+      throw new HttpException('Платіж не знайдено', HttpStatus.NOT_FOUND);
+    }
+
+    Object.assign(lesson.sum[paymentIndex], paymentData);
+    await lesson.save();
+    return lesson;
+  }
+
+  async deletePayment(lessonId: string, paymentId: string) {
+    const lesson = await this.lessonModule.findById(lessonId);
+    if (!lesson) {
+      throw new HttpException('Заняття не знайдено', HttpStatus.NOT_FOUND);
+    }
+
+    const newPayments = lesson.sum.filter(
+      (p) => p._id.toString() !== paymentId,
+    );
+    if (newPayments.length === lesson.sum.length) {
+      throw new HttpException('Платіж не знайдено', HttpStatus.NOT_FOUND);
+    }
+
+    lesson.sum = newPayments;
+    await lesson.save();
+    return lesson;
   }
 }
