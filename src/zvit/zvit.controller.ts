@@ -46,7 +46,6 @@ export class ZvitController {
       const totalData = await this.zvitService.createZviForSelectedPeriod(
         query,
       );
-
       return res.status(HttpStatus.OK).json({ totalData });
     } catch (err) {
       return res.status(HttpStatus.BAD_REQUEST).json({

@@ -5,7 +5,7 @@ import { Child } from 'src/child/child.models';
 import { IChild } from 'src/child/interface/child.intarface';
 import { Expense } from 'src/expense/expense.models';
 import { IExpense } from 'src/expense/interface/expense.interface';
-import { ILesson } from 'src/lesson/interface/lesson.interface';
+import { ILesson, IPayment } from 'src/lesson/interface/lesson.interface';
 import { Lesson } from 'src/lesson/lesson.models';
 import { CreateOneMonthTotalZvitDto } from './dto/create-oneMonse-zvit.dto';
 import { startOfYear, subDays } from 'date-fns';
@@ -29,17 +29,32 @@ export class ZvitService {
     const startOfCurrentYear = startOfYear(startOfDay);
     const endOfPreviousPeriod = subDays(startOfDay, 1);
 
+    const allPayments = await this.lessonModule.aggregate([
+      { $unwind: '$sum' },
+      { $match: { 'sum.date': { $gte: startOfCurrentYear, $lte: endOfDay } } },
+      { $project: { _id: 0, sum: 1 } },
+    ]);
+
+    const previousPayments = allPayments.filter(
+      (payment) => payment.sum.date < startOfDay,
+    );
+    const periodPayments = allPayments.filter(
+      (payment) =>
+        payment.sum.date >= startOfDay && payment.sum.date <= endOfDay,
+    );
+
     const previousLessons = await this.lessonModule
       .find({
         dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
       })
       .exec();
-
     const previousExpenses = await this.expenseModule
       .find({ date: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod } })
       .exec();
 
-    const previousIncome = this.calculateIncome(previousLessons);
+    const previousIncome = this.calculateIncome(
+      previousPayments.map((p) => p.sum),
+    );
     const previousExpense = this.calculateExpenses(previousExpenses);
 
     const previousPeriodProfit = {
@@ -52,14 +67,6 @@ export class ZvitService {
     const lessonsPeriod = await this.lessonModule
       .find({ dateLesson: { $gte: startOfDay, $lte: endOfDay } })
       .exec();
-
-    const expensesPeriod = await this.expenseModule
-      .find({ date: { $gte: startOfDay, $lte: endOfDay } })
-      .exec();
-
-    const income = this.calculateIncome(lessonsPeriod);
-    const expense = this.calculateExpenses(expensesPeriod);
-
     const workedLessons = lessonsPeriod.filter(
       (lesson) => lesson.isHappend === 'Відпрацьоване',
     );
@@ -67,6 +74,12 @@ export class ZvitService {
       (acc, lesson) => acc + (lesson.price || 0),
       0,
     );
+
+    const expensesPeriod = await this.expenseModule
+      .find({ date: { $gte: startOfDay, $lte: endOfDay } })
+      .exec();
+    const income = this.calculateIncome(periodPayments.map((p) => p.sum));
+    const expense = this.calculateExpenses(expensesPeriod);
 
     const profit = {
       amount: income.amount - expense.amount + previousPeriodProfit.amount,
@@ -82,21 +95,20 @@ export class ZvitService {
     return { income, workedIncom, expense, profit, previousPeriodProfit };
   }
 
-  private calculateIncome(lessons: ILesson[]) {
-    return lessons.reduce(
-      (acc, lesson) => {
-        lesson.sum.forEach((payment) => {
-          acc.amount += payment.amount;
-          if (payment.paymentForm === 'cash') {
-            acc.cash += payment.amount;
-          } else if (payment.paymentForm === 'cashless') {
-            if (payment.bank === 'PrivatBank') {
-              acc.privatBank += payment.amount;
-            } else if (payment.bank === 'MonoBank') {
-              acc.monoBank += payment.amount;
-            }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private calculateIncome(payments: any) {
+    return payments.reduce(
+      (acc, payment) => {
+        acc.amount += payment.amount;
+        if (payment.paymentForm === 'cash') {
+          acc.cash += payment.amount;
+        } else if (payment.paymentForm === 'cashless') {
+          if (payment.bank === 'PrivatBank') {
+            acc.privatBank += payment.amount;
+          } else if (payment.bank === 'MonoBank') {
+            acc.monoBank += payment.amount;
           }
-        });
+        }
         return acc;
       },
       { cash: 0, privatBank: 0, monoBank: 0, amount: 0 },

@@ -119,7 +119,7 @@ export class ChildController {
   }
 
   @Get()
-  @Roles(Role.Admin, Role.User, Role.Teacher)
+  @Roles(Role.Admin, Role.Teacher)
   async getAll(@Request() req, @Res() res) {
     try {
       const user = req.user;
@@ -149,7 +149,7 @@ export class ChildController {
   }
 
   @Get('children/:id')
-  @Roles(Role.Admin, Role.User, Role.Teacher)
+  @Roles(Role.Admin, Role.Teacher)
   async getChildById(@Request() req, @Param('id') id: string, @Res() res) {
     try {
       const user = req.user;
@@ -174,7 +174,7 @@ export class ChildController {
   }
 
   @Get('/search')
-  @Roles(Role.Admin, Role.User, Role.Teacher)
+  @Roles(Role.Admin, Role.Teacher)
   async getChildByName(
     @Query('query') query: string,
     @Request() req,
