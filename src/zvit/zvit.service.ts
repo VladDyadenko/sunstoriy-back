@@ -10,12 +10,11 @@ import { Lesson } from 'src/lesson/lesson.models';
 import { CreateOneMonthTotalZvitDto } from './dto/create-oneMonse-zvit.dto';
 import { startOfYear, subDays } from 'date-fns';
 import { CreateChildPerioZvitDto } from './dto/create-children-period.dto';
+import { IChildrensRespons, IPaymentRespons } from './interface/zvit.interface';
 
 @Injectable()
 export class ZvitService {
-  //Створюємо кешування по дітям, щоб не звертатись постійно до БД
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private childCache = new Map<string, any>();
+  private childCache = new Map<string, IChild>();
 
   constructor(
     @InjectModel(Lesson.name) private lessonModule: Model<ILesson>,
@@ -95,9 +94,8 @@ export class ZvitService {
     return { income, workedIncom, expense, profit, previousPeriodProfit };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private calculateIncome(payments: any) {
-    return payments.reduce(
+  private calculateIncome(payments: IPayment[]): IPaymentRespons {
+    return payments.reduce<IPaymentRespons>(
       (acc, payment) => {
         acc.amount += payment.amount;
         if (payment.paymentForm === 'cash') {
@@ -134,8 +132,7 @@ export class ZvitService {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async getChildInfo(childId: string): Promise<any> {
+  private async getChildInfo(childId: string): Promise<IChild> {
     if (this.childCache.has(childId)) {
       return this.childCache.get(childId);
     }
@@ -160,8 +157,8 @@ export class ZvitService {
       .exec();
 
     // Групуємо уроки по дитині
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const childrenMap = new Map<string, any>();
+
+    const childrenMap = new Map<string, IChildrensRespons>();
 
     for (const lesson of lessons) {
       const childId = lesson.child.toString();
@@ -249,8 +246,16 @@ export class ZvitService {
         lessonId: lesson._id,
         office: lesson.office,
         price: lesson.price || 0,
-        sum: totalSum, // Загальна оплачена сума за урок
+        sum: totalSum,
         balance,
+        payments: lesson.sum,
+        salaryData: {
+          isHappend: lesson.isHappend,
+          teacher: lesson.teacher,
+          dateLesson: lesson.dateLesson,
+          timeLesson: lesson.timeLesson,
+          office: lesson.office,
+        },
       };
     });
 
