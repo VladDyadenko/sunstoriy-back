@@ -199,7 +199,14 @@ export class LessonService {
   async deleteLessonById(id: string) {
     const lesson = await this.lessonModule.findById({ _id: id });
 
-    const { child, teacher } = lesson;
+    const { child, teacher, office } = lesson;
+
+    if (
+      lesson.isHappend === 'Відпрацьоване' ||
+      (lesson.sum && lesson.sum.length > 0)
+    ) {
+      throw new Error('Заняття відпрацьоване або має оплату!!!');
+    }
 
     await this.childModule.findByIdAndUpdate(
       {
@@ -225,7 +232,7 @@ export class LessonService {
     );
 
     await this.lessonModule.deleteOne({ _id: id });
-    return `Successful delete`;
+    return office;
   }
 
   //  Сервіси роботи з платежами
