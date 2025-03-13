@@ -13,11 +13,17 @@ import { LessonModule } from './lesson/lesson.module';
 import { SmsModule } from './sms/sms.module';
 import { ExpenseModule } from './expense/expense.module';
 import { ZvitModule } from './zvit/zvit.module';
+import { ConfigModule } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 
 config();
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     MongooseModule.forRoot(`${process.env.DB_HOST}`),
     UsersModule,
     AuthModule,
@@ -30,7 +36,14 @@ config();
     SmsModule,
     ExpenseModule,
     ZvitModule,
+    HttpModule,
   ],
   controllers: [AuthController],
+  providers: [
+    {
+      provide: 'APP_GUARD',
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

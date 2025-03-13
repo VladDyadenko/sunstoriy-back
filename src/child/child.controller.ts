@@ -24,6 +24,8 @@ import { UpdateChildDto } from './dto/update-child.dto';
 import { Roles } from 'src/roles/roles.decorator';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Role } from 'src/roles/role.enum';
+import { CurrentUser } from '@common/decorators';
+import { JwtPayload } from '@auth/interfaces/jwt-payload.interface';
 
 @Controller('/child')
 @UseGuards(RolesGuard)
