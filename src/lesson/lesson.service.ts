@@ -16,6 +16,7 @@ import { ISalary } from 'src/salary/interface/salary.interface';
 import { SalaryService } from 'src/salary/salary.service';
 import { AddPaymentDto } from './dto/add-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { LessonByOfficeDateTeacherDto } from './dto/get-lesson-date-teacher.dto';
 
 @Injectable()
 export class LessonService {
@@ -177,6 +178,83 @@ export class LessonService {
   async getLessonById(id: string) {
     const lesson = await this.lessonModule.findById({ _id: id });
     return lesson;
+  }
+
+  async getLessonByOfficeAndDateTeachers(dto: LessonByOfficeDateTeacherDto) {
+    const dates = Array.isArray(dto.dateCurrentLesson)
+      ? dto.dateCurrentLesson
+      : [dto.dateCurrentLesson];
+
+    const formattedDates = dates.map((timestamp) => {
+      const date = new Date(Number(timestamp));
+      if (isNaN(date.getTime())) {
+        throw new HttpException('Invalid time value', HttpStatus.BAD_REQUEST);
+      }
+      return date.toISOString();
+    });
+
+    // Получаем все уроки
+    const lessons = await this.lessonModule
+      .find({
+        office: { $in: dto.offices },
+        dateLesson: { $in: formattedDates },
+      })
+      .sort({ dateLesson: 1 })
+      .lean();
+
+    // Структурируем данные для графика
+    const scheduleByDate = formattedDates.reduce((acc, date) => {
+      // Получаем все уроки на эту дату
+      const lessonsForDate = lessons.filter(
+        (lesson) => new Date(lesson.dateLesson).toISOString() === date,
+      );
+
+      if (lessonsForDate.length === 0) return acc;
+
+      // Получаем уникальные офисы с уроками на эту дату
+      const officesWithLessons = [
+        ...new Set(lessonsForDate.map((lesson) => lesson.office)),
+      ];
+
+      // Получаем уникальные временные слоты (массивы начала и конца занятия)
+      const uniqueTimes = [
+        ...new Set(
+          lessonsForDate.map((lesson) =>
+            JSON.stringify(
+              lesson.timeLesson.map((time) => new Date(time).toISOString()),
+            ),
+          ),
+        ),
+      ]
+        .map((timeStr) => JSON.parse(timeStr))
+        .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
+
+      // Группируем уроки по офисам
+      const lessonsByOffice = officesWithLessons.reduce((officeAcc, office) => {
+        const officeLessons = lessonsForDate
+          .filter((lesson) => lesson.office === office)
+          .sort((a, b) => {
+            const timeA = new Date(a.timeLesson[0]).getTime();
+            const timeB = new Date(b.timeLesson[0]).getTime();
+            return timeA - timeB;
+          });
+
+        if (officeLessons.length > 0) {
+          officeAcc[office] = officeLessons;
+        }
+        return officeAcc;
+      }, {});
+
+      acc[date] = {
+        offices: officesWithLessons,
+        uniqueTimePairs: uniqueTimes, // массив массивов времени [["start1", "end1"], ["start2", "end2"]]
+        lessons: lessonsByOffice,
+      };
+
+      return acc;
+    }, {});
+
+    return scheduleByDate;
   }
 
   async getLessonByOfficeAndDate(dto: GetLessonByOfficeAndDateDto) {
