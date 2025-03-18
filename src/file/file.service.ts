@@ -14,7 +14,7 @@ export class FileService {
 
   constructor(@InjectModel(Child.name) private childModule: Model<IChild>) {
     this.storage = new Storage({
-      keyFilename: join(process.cwd(), 'sunstoriy-af37805ef51b.json'),
+      credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
       projectId: process.env.PROJECT_ID,
     });
   }
