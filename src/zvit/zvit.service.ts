@@ -142,21 +142,28 @@ export class ZvitService {
     return child;
   }
 
+  // Принципи сортування:
+  // В відбір потрапляють уроки, у яких стоїть статус "Відпрацьовано" або є оплата на дату
+  // періоду, який запросили
+  // Заборгованість врахована по заняттям, статус яких відпрацьовано
+  // Якщо хоч один баланс (до, в період, або кінцевий не дорівнює 0), то дитина буде в статистиці
+
   async createReportChildrens(dto: CreateOneMonthTotalZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
     const startOfCurrentYear = startOfYear(startOfDay);
     const endOfPreviousPeriod = subDays(startOfDay, 1);
 
-    // Отримуємо всі уроки за період
+    // Получаем все уроки с начала года
     const lessons = await this.lessonModule
       .find({
-        dateLesson: { $gte: startOfDay, $lte: endOfDay },
-        isHappend: 'Відпрацьоване',
+        dateLesson: { $gte: startOfCurrentYear, $lte: endOfDay },
+        $or: [
+          { isHappend: 'Відпрацьоване' },
+          { sum: { $exists: true, $ne: [], $type: 'array' } },
+        ],
       })
       .exec();
-
-    // Групуємо уроки по дитині
 
     const childrenMap = new Map<string, IChildrensRespons>();
 
@@ -176,107 +183,133 @@ export class ZvitService {
       }
 
       const childData = childrenMap.get(childId);
-      const totalSum =
-        lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
 
-      childData.period.price += lesson.price || 0;
-      childData.period.sum += totalSum;
-      childData.period.balance = childData.period.sum - childData.period.price;
+      // Фильтруем платежи по периодам
+      const periodPayments = lesson.sum.filter(
+        (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
+      );
+
+      const previousPayments = lesson.sum.filter(
+        (payment) =>
+          payment.date >= startOfCurrentYear && payment.date < startOfDay,
+      );
+
+      if (lesson.dateLesson >= startOfDay && lesson.dateLesson <= endOfDay) {
+        const lessonPrice =
+          lesson.isHappend === 'Відпрацьоване' ? lesson.price || 0 : 0;
+        childData.period.price += lessonPrice;
+        childData.period.sum += periodPayments.reduce(
+          (acc, payment) => acc + payment.amount,
+          0,
+        );
+      } else if (
+        lesson.dateLesson >= startOfCurrentYear &&
+        lesson.dateLesson < startOfDay
+      ) {
+        const lessonPrice =
+          lesson.isHappend === 'Відпрацьоване' ? lesson.price || 0 : 0;
+        childData.start.price += lessonPrice;
+        childData.start.sum += previousPayments.reduce(
+          (acc, payment) => acc + payment.amount,
+          0,
+        );
+      }
     }
 
-    // Отримуємо уроки за попередній період (з початку року)
-    const previousLessons = await this.lessonModule
-      .find({
-        dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
-        isHappend: 'Відпрацьоване',
-      })
-      .exec();
-
-    previousLessons.forEach((lesson) => {
-      const childId = lesson.child.toString();
-      if (childrenMap.has(childId)) {
-        const childData = childrenMap.get(childId);
-        const totalSum =
-          lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
-
-        childData.start.price += lesson.price || 0;
-        childData.start.sum += totalSum;
-        childData.start.balance = childData.start.sum - childData.start.price;
-      }
-    });
-
-    // Розраховуємо кінцевий баланс
+    // Рассчитываем балансы
     childrenMap.forEach((childData) => {
+      childData.start.balance = childData.start.sum - childData.start.price;
+      childData.period.balance = childData.period.sum - childData.period.price;
       childData.end.balance =
         childData.start.balance + childData.period.balance;
     });
 
-    // Перетворюємо Map у масив і сортуємо за ім’ям дитини
-    const sortedChildren = Array.from(childrenMap.values()).sort((a, b) =>
-      a.childName.localeCompare(b.childName),
-    );
-
-    return sortedChildren;
+    return Array.from(childrenMap.values())
+      .filter(
+        (child) =>
+          child.start.balance !== 0 ||
+          child.period.sum !== 0 || // Если были поступления в периоде
+          child.period.price !== 0 || // Если были списания в периоде
+          child.end.balance !== 0,
+      )
+      .sort((a, b) => a.childName.localeCompare(b.childName));
   }
 
   async getChildDetailReport(id: string, dto: CreateChildPerioZvitDto) {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
+    const startOfCurrentYear = startOfYear(startOfDay);
+    const endOfPreviousPeriod = subDays(startOfDay, 1);
 
-    // Отримуємо всі уроки за вказаний період зі статусом "Відпрацьоване"
     const lessons = await this.lessonModule
       .find({
         child: id,
-        dateLesson: { $gte: startOfDay, $lte: endOfDay },
-        isHappend: 'Відпрацьоване',
+        dateLesson: { $gte: startOfCurrentYear, $lte: endOfDay },
+        $or: [
+          { isHappend: 'Відпрацьоване' },
+          { sum: { $exists: true, $ne: [], $type: 'array' } },
+        ],
       })
       .sort({ dateLesson: 1 })
       .exec();
 
     let totalBalance = 0;
-    const details = lessons.map((lesson) => {
-      // Підраховуємо всі платежі за урок
-      const totalSum =
-        lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
-      const balance = totalSum - (lesson.price || 0);
-      totalBalance += balance;
+    const details = lessons
+      .filter(
+        (lesson) =>
+          (lesson.dateLesson >= startOfDay && lesson.dateLesson <= endOfDay) ||
+          lesson.sum.some(
+            (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
+          ),
+      )
+      .map((lesson) => {
+        const periodPayments = lesson.sum.filter(
+          (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
+        );
 
-      return {
-        dateLesson: lesson.dateLesson,
-        lessonId: lesson._id,
-        office: lesson.office,
-        price: lesson.price || 0,
-        sum: totalSum,
-        balance,
-        payments: lesson.sum,
-        salaryData: {
-          isHappend: lesson.isHappend,
-          teacher: lesson.teacher,
+        const totalSum = periodPayments.reduce(
+          (acc, payment) => acc + payment.amount,
+          0,
+        );
+        const lessonPrice =
+          lesson.isHappend === 'Відпрацьоване' ? lesson.price || 0 : 0;
+        const balance = totalSum - lessonPrice;
+        totalBalance += balance;
+
+        return {
           dateLesson: lesson.dateLesson,
-          timeLesson: lesson.timeLesson,
+          lessonId: lesson._id,
           office: lesson.office,
-        },
-      };
-    });
+          price: lessonPrice,
+          sum: totalSum,
+          balance,
+          payments: periodPayments,
+          salaryData: {
+            isHappend: lesson.isHappend,
+            teacher: lesson.teacher,
+            dateLesson: lesson.dateLesson,
+            timeLesson: lesson.timeLesson,
+            office: lesson.office,
+          },
+        };
+      });
 
-    const startOfCurrentYear = startOfYear(startOfDay);
-    const endOfPreviousPeriod = subDays(startOfDay, 1);
-
-    // Отримуємо всі уроки до початку періоду (щоб порахувати початковий баланс)
-    const previousPeriodLessons = await this.lessonModule
-      .find({
-        child: id,
-        dateLesson: { $gte: startOfCurrentYear, $lte: endOfPreviousPeriod },
-        isHappend: 'Відпрацьоване',
-      })
-      .exec();
-
-    let totalPreviousBalance = 0;
-    previousPeriodLessons.forEach((lesson) => {
-      const totalSum =
-        lesson.sum.reduce((acc, payment) => acc + payment.amount, 0) || 0;
-      totalPreviousBalance += totalSum - (lesson.price || 0);
-    });
+    // Расчет предыдущего баланса
+    const totalPreviousBalance = lessons
+      .filter((lesson) => lesson.dateLesson < startOfDay)
+      .reduce((acc, lesson) => {
+        const previousPayments = lesson.sum.filter(
+          (payment) =>
+            payment.date >= startOfCurrentYear && payment.date < startOfDay,
+        );
+        const totalSum = previousPayments.reduce(
+          (sum, payment) => sum + payment.amount,
+          0,
+        );
+        const lessonPrice =
+          lesson.isHappend === 'Відпрацьоване' ? lesson.price || 0 : 0;
+        return acc + (totalSum - lessonPrice);
+      }, 0);
 
     return {
       childName: lessons[0]?.childName || '',
