@@ -29,7 +29,19 @@ export class LessonService {
   ) {}
 
   async createLesson(dto: CreateLessonDto) {
-    console.log("🚀 ~ LessonService ~ createLesson ~ dto:", dto)
+    // Преобразуем timeLesson, чтобы дата совпадала с dateLesson
+    const dateLesson = new Date(dto.dateLesson);
+    dto.timeLesson = dto.timeLesson.map((time) => {
+      const updatedTime = new Date(time);
+
+      // Встановлюємо 1-й день місяця, щоб уникнути переповзання
+      updatedTime.setDate(1);
+      updatedTime.setFullYear(dateLesson.getFullYear());
+      updatedTime.setMonth(dateLesson.getMonth());
+      updatedTime.setDate(dateLesson.getDate()); // Повертаємо потрібний день
+
+      return updatedTime;
+    });
     const availability = await checkLessonAvailability(this.lessonModule, dto);
 
     if (!availability.isAvailable) {
@@ -37,8 +49,6 @@ export class LessonService {
     }
 
     const lesson = await this.lessonModule.create(dto);
-    console.log("🚀 ~ LessonService ~ createLesson ~ lesson:", lesson)
-
     await this.childModule.findByIdAndUpdate(
       dto.child,
       {

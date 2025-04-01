@@ -216,6 +216,43 @@ export class ZvitService {
       }
     }
 
+    // Змінюємо aggregate запит для пошуку всіх платежів у періоді
+    const allPeriodPayments = await this.lessonModule.aggregate([
+      { $unwind: '$sum' },
+      {
+        $match: {
+          'sum.date': { $gte: startOfDay, $lte: endOfDay },
+        },
+      },
+      {
+        $group: {
+          _id: '$child',
+          totalSum: { $sum: '$sum.amount' },
+        },
+      },
+    ]);
+
+    // Додаємо всі платежі періоду до мапу дітей
+    for (const payment of allPeriodPayments) {
+      const childId = payment._id.toString();
+      const childInfo = await this.getChildInfo(childId);
+
+      if (!childrenMap.has(childId)) {
+        childrenMap.set(childId, {
+          child: childId,
+          childName: childInfo.name,
+          childSurname: childInfo.surname || '',
+          start: { price: 0, sum: 0, balance: 0 },
+          period: { price: 0, sum: 0, balance: 0 },
+          end: { balance: 0 },
+        });
+      }
+
+      const childData = childrenMap.get(childId);
+      // Оновлюємо суму періоду для дитини
+      childData.period.sum = payment.totalSum;
+    }
+
     // Рассчитываем балансы
     childrenMap.forEach((childData) => {
       childData.start.balance = childData.start.sum - childData.start.price;
@@ -239,7 +276,6 @@ export class ZvitService {
     const startOfDay = new Date(dto.startDate);
     const endOfDay = new Date(dto.endDate);
     const startOfCurrentYear = startOfYear(startOfDay);
-    const endOfPreviousPeriod = subDays(startOfDay, 1);
 
     const lessons = await this.lessonModule
       .find({
@@ -254,19 +290,16 @@ export class ZvitService {
       .exec();
 
     let totalBalance = 0;
-    const details = lessons
-      .filter(
-        (lesson) =>
-          (lesson.dateLesson >= startOfDay && lesson.dateLesson <= endOfDay) ||
-          lesson.sum.some(
-            (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
-          ),
-      )
-      .map((lesson) => {
-        const periodPayments = lesson.sum.filter(
-          (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
-        );
+    const details = [];
 
+    // Обробка занять і платежів
+    lessons.forEach((lesson) => {
+      const periodPayments = lesson.sum.filter(
+        (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
+      );
+
+      if (lesson.dateLesson >= startOfDay && lesson.dateLesson <= endOfDay) {
+        // Звичайна логіка для занять у періоді
         const totalSum = periodPayments.reduce(
           (acc, payment) => acc + payment.amount,
           0,
@@ -276,7 +309,7 @@ export class ZvitService {
         const balance = totalSum - lessonPrice;
         totalBalance += balance;
 
-        return {
+        details.push({
           dateLesson: lesson.dateLesson,
           lessonId: lesson._id,
           office: lesson.office,
@@ -291,10 +324,26 @@ export class ZvitService {
             timeLesson: lesson.timeLesson,
             office: lesson.office,
           },
-        };
-      });
+        });
+      } else if (periodPayments.length > 0) {
+        // Якщо є оплата, але заняття не у періоді – створюємо запис тільки для платежу
+        periodPayments.forEach((payment) => {
+          details.push({
+            dateLesson: payment.date, // Дата платежу
+            lessonId: payment._id, // Немає зв'язку з заняттям
+            office: 'Оплата заняття',
+            price: 0,
+            sum: payment.amount,
+            balance: payment.amount, // Додаємо до балансу
+            payments: [payment],
+            salaryData: null,
+          });
+          totalBalance += payment.amount;
+        });
+      }
+    });
 
-    // Расчет предыдущего баланса
+    // Розрахунок попереднього балансу
     const totalPreviousBalance = lessons
       .filter((lesson) => lesson.dateLesson < startOfDay)
       .reduce((acc, lesson) => {
