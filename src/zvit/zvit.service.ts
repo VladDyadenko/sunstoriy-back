@@ -133,22 +133,21 @@ export class ZvitService {
   }
 
   private async getChildInfo(childId: string): Promise<IChild | null> {
-  if (this.childCache.has(childId)) {
-    const cached = this.childCache.get(childId);
-    if (cached) return cached;
-    return null; // null не повертаємо повторно
+    if (this.childCache.has(childId)) {
+      const cached = this.childCache.get(childId);
+      if (cached) return cached;
+      return null; // null не повертаємо повторно
+    }
+
+    const child = await this.childModule.findById(childId).lean();
+
+    if (!child) {
+      return null; // ❌ не кешуємо null
+    }
+
+    this.childCache.set(childId, child);
+    return child;
   }
-
-  const child = await this.childModule.findById(childId).lean();
-
-  if (!child) {
-    return null; // ❌ не кешуємо null
-  }
-
-  this.childCache.set(childId, child);
-  return child;
-}
-
 
   // private async getChildInfo(childId: string): Promise<IChild> {
   //   if (this.childCache.has(childId)) {
