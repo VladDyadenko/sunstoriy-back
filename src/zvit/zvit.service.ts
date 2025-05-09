@@ -171,7 +171,6 @@ export class ZvitService {
     const startOfCurrentYear = startOfYear(startOfDay);
     const endOfPreviousPeriod = subDays(startOfDay, 1);
 
-    // Получаем все уроки с начала года
     const lessons = await this.lessonModule
       .find({
         dateLesson: { $gte: startOfCurrentYear, $lte: endOfDay },
@@ -187,8 +186,12 @@ export class ZvitService {
     for (const lesson of lessons) {
       const childId = lesson.child.toString();
       const childInfo = await this.getChildInfo(childId);
-      if (!childInfo) {
-        continue; // або логування, або просто пропустити
+
+      if (!childInfo || !childInfo.name) {
+        console.warn(
+          `Пропущено урок — відсутня дитина або її ім'я: ID=${childId}`,
+        );
+        continue;
       }
 
       if (!childrenMap.has(childId)) {
@@ -204,7 +207,6 @@ export class ZvitService {
 
       const childData = childrenMap.get(childId);
 
-      // Фильтруем платежи по периодам
       const periodPayments = lesson.sum.filter(
         (payment) => payment.date >= startOfDay && payment.date <= endOfDay,
       );
@@ -236,7 +238,6 @@ export class ZvitService {
       }
     }
 
-    // Змінюємо aggregate запит для пошуку всіх платежів у періоді
     const allPeriodPayments = await this.lessonModule.aggregate([
       { $unwind: '$sum' },
       {
@@ -252,10 +253,16 @@ export class ZvitService {
       },
     ]);
 
-    // Додаємо всі платежі періоду до мапу дітей
     for (const payment of allPeriodPayments) {
       const childId = payment._id.toString();
       const childInfo = await this.getChildInfo(childId);
+
+      if (!childInfo || !childInfo.name) {
+        console.warn(
+          `Пропущено платіж — відсутня дитина або її ім'я: ID=${childId}`,
+        );
+        continue;
+      }
 
       if (!childrenMap.has(childId)) {
         childrenMap.set(childId, {
@@ -269,11 +276,9 @@ export class ZvitService {
       }
 
       const childData = childrenMap.get(childId);
-      // Оновлюємо суму періоду для дитини
       childData.period.sum = payment.totalSum;
     }
 
-    // Рассчитываем балансы
     childrenMap.forEach((childData) => {
       childData.start.balance = childData.start.sum - childData.start.price;
       childData.period.balance = childData.period.sum - childData.period.price;
@@ -285,8 +290,8 @@ export class ZvitService {
       .filter(
         (child) =>
           child.start.balance !== 0 ||
-          child.period.sum !== 0 || // Если были поступления в периоде
-          child.period.price !== 0 || // Если были списания в периоде
+          child.period.sum !== 0 ||
+          child.period.price !== 0 ||
           child.end.balance !== 0,
       )
       .sort((a, b) => a.childName.localeCompare(b.childName));
